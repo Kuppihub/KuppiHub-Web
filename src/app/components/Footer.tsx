@@ -77,7 +77,7 @@ export default function Footer() {
             </svg>
           </a>
       <a
-  href="https://github.com/cse23-mora"
+  href="https://github.com/kuppihub"
   target="_blank"
   rel="noopener noreferrer"
   aria-label="GitHub"

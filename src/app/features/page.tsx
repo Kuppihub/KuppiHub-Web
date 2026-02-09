@@ -104,7 +104,7 @@ const Features = () => {
     title: "Code Contributions",
     description: "Fork our GitHub repo, add features, and submit pull requests to improve the platform",
     action: "Contribute Code",
-    link: "https://github.com/cse23-mora"
+    link: "https://github.com/kuppihub"
   },
   {
     step: "04",
@@ -365,7 +365,7 @@ const Features = () => {
   <p className="text-green-100 text-sm italic">
     P.S: We&apos;re open source on{" "}
     <a
-      href="https://github.com/cse23-mora"
+      href="https://github.com/kuppihub"
       target="_blank"
       rel="noopener noreferrer"
       className="underline hover:text-green-200"
