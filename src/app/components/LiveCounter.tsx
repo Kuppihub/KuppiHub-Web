@@ -8,6 +8,16 @@ import { app } from '@/lib/firebase';
 export default function LiveCounter() {
   const [liveCount, setLiveCount] = useState<number>(0);
   const [isVisible, setIsVisible] = useState<boolean>(false);
+  const [showCounter, setShowCounter] = useState<boolean>(true);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setShowCounter(window.scrollY < 100);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     try {
@@ -50,7 +60,7 @@ export default function LiveCounter() {
   return (
     <div
       className={`fixed top-20 right-4 bg-white text-gray-900 px-3 py-2 rounded-full shadow-md font-semibold transition-all duration-300 flex items-center gap-2 ${
-        isVisible ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+        isVisible && showCounter ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
       }`}
     >
       <svg
