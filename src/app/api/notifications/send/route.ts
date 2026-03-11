@@ -33,15 +33,13 @@ async function isAdmin(request: NextRequest): Promise<boolean> {
 export async function POST(request: NextRequest) {
   try {
     // ============ ADMIN AUTHENTICATION ============
-    // const isAdminUser = await isAdmin(request);
-    // if (!isAdminUser) {
-    //   return NextResponse.json(
-    //     { error: "Unauthorized. Admin access required." },
-    //     { status: 403 }
-    //   );
-    // }
-
-    //skip admin check for now testing
+    const isAdminUser = await isAdmin(request);
+    if (!isAdminUser) {
+      return NextResponse.json(
+        { error: "Unauthorized. Admin access required." },
+        { status: 403 }
+      );
+    }
 
     const body = await request.json();
     const { target_type, target_value, title, body: messageBody, data } = body;
