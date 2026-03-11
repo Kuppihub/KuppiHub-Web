@@ -113,6 +113,83 @@ videos (id, module_id, title, youtube_links, telegram_links, material_urls, is_k
 4. **Open your browser**
    Navigate to [http://localhost:3000](http://localhost:3000)
 
+## 🧑‍💻 Developer Setup (Local Supabase + App)
+
+This project supports a full local Supabase stack using Docker via the Supabase CLI.
+
+### 1) Install Supabase CLI
+```bash
+npm install -g supabase
+```
+
+### 2) Create your `.env`
+Copy from `env.example` and fill it:
+```bash
+cp env.example .env
+```
+
+### 3) Sync migrations to Supabase CLI
+```bash
+./scripts/supabase-sync-migrations.sh
+```
+
+### 4) Start local Supabase (Docker)
+```bash
+supabase start
+```
+
+The CLI will print local URLs and keys. Update your `.env` with those values:
+```env
+NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
+SUPABASE_URL=http://localhost:54321
+SUPABASE_SERVICE_ROLE_KEY=your_local_service_role_key
+```
+
+### 5) Run the app
+```bash
+npm run dev
+```
+
+App: `http://localhost:3000`
+
+### 6) Stop local Supabase
+```bash
+supabase stop
+```
+
+## 🐳 Docker (App Only)
+
+If you want the app running in Docker (using a hosted Supabase):
+
+```bash
+docker compose up --build
+```
+
+## 🐳 Docker (Postgres Only, No Supabase CLI)
+
+If you only want a local Postgres database (no Supabase services):
+
+```bash
+docker compose -f docker-compose.db.yml up --build
+```
+
+This will:
+1. Start Postgres on `localhost:5432`
+2. Run all SQL files in `supabase_migrations/` on first startup
+
+Default credentials:
+```text
+DB: kuppihub
+USER: kuppihub
+PASS: kuppihub
+```
+
+Stop and remove data:
+```bash
+docker compose -f docker-compose.db.yml down -v
+```
+
 ## 🔧 Configuration
 
 ### Supabase Integration
@@ -131,6 +208,39 @@ To connect with your Supabase database:
    ```
 
 3. **Replace mock data calls** in each page component with actual Supabase queries
+
+### Local Supabase (Docker via Supabase CLI)
+
+This project can run a full local Supabase stack in Docker using the Supabase CLI.
+
+1. **Install Supabase CLI**
+   ```bash
+   npm install -g supabase
+   ```
+
+2. **Sync migrations**
+   ```bash
+   ./scripts/supabase-sync-migrations.sh
+   ```
+
+3. **Start local Supabase**
+   ```bash
+   supabase start
+   ```
+
+4. **Update `.env` for local**
+   Use the URLs/keys printed by `supabase start` and set:
+   ```env
+   NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
+   SUPABASE_URL=http://localhost:54321
+   SUPABASE_SERVICE_ROLE_KEY=your_local_service_role_key
+   ```
+
+5. **Run the app**
+   ```bash
+   npm run dev
+   ```
 
 ### Example Supabase Query
 
