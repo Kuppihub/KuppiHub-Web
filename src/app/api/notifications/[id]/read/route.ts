@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/supabase";
+import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 
 export async function PUT(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get user ID from Firebase UID
-    const { data: userData } = await supabase
+    const { data: userData } = await supabaseAdmin
       .from("users")
       .select("id")
       .eq("firebase_uid", verifiedUser.uid)
@@ -45,7 +45,7 @@ export async function PUT(request: NextRequest) {
 
     // ============ VERIFY OWNERSHIP & UPDATE ============
     // First, verify that this notification belongs to the user
-    const { data: notification } = await supabase
+    const { data: notification } = await supabaseAdmin
       .from("notifications")
       .select("id")
       .eq("id", notificationId)
@@ -60,7 +60,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Mark as read
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("notifications")
       .update({ is_read: true })
       .eq("id", notificationId)

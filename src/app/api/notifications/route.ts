@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/supabase";
+import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 
 export async function GET(request: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user ID from Firebase UID
-    const { data: userData } = await supabase
+    const { data: userData } = await supabaseAdmin
       .from("users")
       .select("id")
       .eq("firebase_uid", verifiedUser.uid)
@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const offset = (page - 1) * limit;
 
     // ============ FETCH NOTIFICATIONS ============
-    const { data: notifications, error: notifError, count } = await supabase
+    const { data: notifications, error: notifError, count } = await supabaseAdmin
       .from("notifications")
       .select("*", { count: "exact" })
       .eq("user_id", userId)

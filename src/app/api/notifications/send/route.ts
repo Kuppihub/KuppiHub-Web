@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/supabase";
+import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 
 // Admin token validation (use environment variable in production)
@@ -21,7 +21,7 @@ async function isAdmin(request: NextRequest): Promise<boolean> {
     return false;
   }
 
-  const { data: userData } = await supabase
+  const { data: userData } = await supabaseAdmin
     .from("users")
     .select("is_admin")
     .eq("firebase_uid", verifiedUser.uid)
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Get user's devices
-      const { data: devices, error: deviceError } = await supabase
+      const { data: devices, error: deviceError } = await supabaseAdmin
         .from("user_devices")
         .select("fcm_token")
         .eq("user_id", userId);
@@ -109,7 +109,7 @@ export async function POST(request: NextRequest) {
       }
 
       // Insert notification in database
-      const { data: notification, error: insertError } = await supabase
+      const { data: notification, error: insertError } = await supabaseAdmin
         .from("notifications")
         .insert({
           user_id: userId,
@@ -134,7 +134,7 @@ export async function POST(request: NextRequest) {
       };
     } else if (target_type === "guest_broadcast") {
       // Send to all guests (devices with user_id = NULL)
-      const { data: guestDevices, error: guestError } = await supabase
+      const { data: guestDevices, error: guestError } = await supabaseAdmin
         .from("user_devices")
         .select("fcm_token")
         .is("user_id", null);
