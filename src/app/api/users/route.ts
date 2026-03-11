@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/supabase';
+import supabaseAdmin from '@/lib/supabase-admin';
 
 // Check if Supabase is configured
 const isSupabaseConfigured = () => {
-  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 };
 
 // GET - Fetch user by firebase_uid or email
@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'firebase_uid or email is required' }, { status: 400 });
     }
 
-    let query = supabase.from('users').select('*');
+    let query = supabaseAdmin.from('users').select('*');
     
     if (firebaseUid) {
       query = query.eq('firebase_uid', firebaseUid);
@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
     }
 
     // First, check if user already exists by firebase_uid
-    const { data: existingUser, error: fetchError } = await supabase
+    const { data: existingUser, error: fetchError } = await supabaseAdmin
       .from('users')
       .select('*')
       .eq('firebase_uid', firebase_uid)
@@ -74,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     if (existingUser) {
       // User exists, update it
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('users')
         .update({
           display_name: display_name || existingUser.display_name,
@@ -96,7 +96,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if email already exists (for a different firebase user - shouldn't happen normally)
-    const { data: emailExists } = await supabase
+    const { data: emailExists } = await supabaseAdmin
       .from('users')
       .select('id')
       .eq('email', email)
@@ -104,7 +104,7 @@ export async function POST(request: NextRequest) {
 
     if (emailExists) {
       // Email already used by different account, update the firebase_uid
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from('users')
         .update({
           firebase_uid,
@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
     }
 
     // User doesn't exist, create new
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .insert({
         firebase_uid,
@@ -169,7 +169,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'firebase_uid is required' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('users')
       .update({ 
         ...updateFields,

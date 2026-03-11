@@ -50,6 +50,29 @@ export default function ModuleKuppiPage() {
     setActiveVideoId(activeVideoId === id ? null : id);
   };
 
+  const videosByYear = videos
+    .slice()
+    .sort((a, b) => {
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+      return bTime - aTime; // newest first
+    })
+    .reduce((acc, video) => {
+      const year =
+        video.created_at && !Number.isNaN(Date.parse(video.created_at))
+          ? new Date(video.created_at).getFullYear().toString()
+          : "Unknown Year";
+      if (!acc[year]) acc[year] = [];
+      acc[year].push(video);
+      return acc;
+    }, {} as Record<string, Video[]>);
+
+  const sortedYears = Object.keys(videosByYear).sort((a, b) => {
+    if (a === "Unknown Year") return 1;
+    if (b === "Unknown Year") return -1;
+    return Number(b) - Number(a);
+  });
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -79,15 +102,27 @@ export default function ModuleKuppiPage() {
         {videos.length === 0 ? (
           <EmptyState />
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {videos.map((video) => (
-              <VideoCard
-                key={video.id}
-                video={video}
-                moduleId={moduleId}
-                isActive={activeVideoId === video.id}
-                onToggle={handleToggleVideo}
-              />
+          <div className="space-y-10">
+            {sortedYears.map((year) => (
+              <div key={year}>
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="text-sm font-semibold uppercase tracking-wider text-indigo-700/80 bg-white/70 px-3 py-1 rounded-full shadow-sm border border-indigo-100">
+                    {year}
+                  </div>
+                  <div className="h-px flex-1 bg-indigo-200/60" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {videosByYear[year].map((video) => (
+                    <VideoCard
+                      key={video.id}
+                      video={video}
+                      moduleId={moduleId}
+                      isActive={activeVideoId === video.id}
+                      onToggle={handleToggleVideo}
+                    />
+                  ))}
+                </div>
+              </div>
             ))}
           </div>
         )}
