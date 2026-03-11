@@ -24,7 +24,7 @@ const ALLOWED_DOMAIN_OPTIONS = [
 
 // Helper function to get user ID from firebase_uid
 async function getUserIdFromFirebaseUid(firebaseUid: string): Promise<number | null> {
-  const { data } = await supabase
+  const { data } = await supabaseAdmin
     .from("users")
     .select("id")
     .eq("firebase_uid", firebaseUid)
