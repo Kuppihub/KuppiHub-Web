@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/supabase";
+import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 
 export async function POST(request: NextRequest) {
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
       }
 
       // C. Look up the SQL ID from the 'users' table using the Firebase UID
-      const { data: userData, error: userError } = await supabase
+      const { data: userData, error: userError } = await supabaseAdmin
         .from("users")
         .select("id")
         .eq("firebase_uid", firebase_uid)
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
     }
 
     // 3. Use 'internalSqlId' for the database operations
-    const { data: existingDevice } = await supabase
+    const { data: existingDevice } = await supabaseAdmin
       .from("user_devices")
       .select("id")
       .eq("fcm_token", trimmedToken)
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
 
     let result;
     if (existingDevice) {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("user_devices")
         .update({
           user_id: internalSqlId, // Use the looked-up integer
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
        if (error) throw error; 
        result = { success: true, action: "updated", data };
     } else {
-      const { data, error } = await supabase
+      const { data, error } = await supabaseAdmin
         .from("user_devices")
         .insert({
           user_id: internalSqlId, // Use the looked-up integer

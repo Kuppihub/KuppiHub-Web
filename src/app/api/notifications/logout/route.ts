@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/supabase";
+import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 
 export async function POST(request: NextRequest) {
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
     const trimmedToken = fcm_token.trim();
 
     // Get current user's ID
-    const { data: userData } = await supabase
+    const { data: userData } = await supabaseAdmin
       .from("users")
       .select("id")
       .eq("firebase_uid", verifiedUser.uid)
@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if device exists AND belongs to current user
-    const { data: existingDevice } = await supabase
+    const { data: existingDevice } = await supabaseAdmin
       .from("user_devices")
       .select("id, user_id")
       .eq("fcm_token", trimmedToken)
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Set user_id to NULL (convert to guest)
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from("user_devices")
       .update({ user_id: null })
       .eq("fcm_token", trimmedToken);
