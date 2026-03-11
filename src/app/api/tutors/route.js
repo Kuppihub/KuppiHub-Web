@@ -8,7 +8,6 @@ export async function GET() {
       .from('students')
       .select(`
         id,
-        index_no,
         name,
         image_url,
         linkedin_url,
@@ -37,7 +36,7 @@ export async function GET() {
         );
 
         if (student.name === 'Unknown') {
-          student.name = student.index_no;
+          student.name = 'Student';
         }
 
         return {

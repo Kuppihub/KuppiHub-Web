@@ -59,8 +59,7 @@ export async function GET(request: NextRequest) {
         ),
         student:student_id (
           id,
-          name,
-          index_no
+          name
         )
       `)
       .eq("added_by_user_id", userData.id)

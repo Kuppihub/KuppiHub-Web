@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/supabase";
+import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 import {
   validateTitle,
@@ -36,7 +37,7 @@ async function findOrCreateStudent(indexNo: string): Promise<number | null> {
   const trimmedIndexNo = indexNo.trim().toUpperCase();
   
   // First, try to find existing student
-  const { data: existingStudent } = await supabase
+  const { data: existingStudent } = await supabaseAdmin
     .from("students")
     .select("id")
     .eq("index_no", trimmedIndexNo)
@@ -47,7 +48,7 @@ async function findOrCreateStudent(indexNo: string): Promise<number | null> {
   }
 
   // Student doesn't exist, create a new one with "Unknown" name
-  const { data: newStudent, error } = await supabase
+  const { data: newStudent, error } = await supabaseAdmin
     .from("students")
     .insert({
       name: "Unknown",

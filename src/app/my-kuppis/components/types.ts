@@ -7,7 +7,6 @@ export interface Module {
 export interface Student {
   id: number;
   name: string;
-  index_no: string;
 }
 
 export interface Kuppi {
