@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import supabase from "@/lib/supabase";
+import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 import {
   validateTitle,
@@ -24,7 +25,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Get user ID from verified Firebase UID
-    const { data: userData } = await supabase
+    const { data: userData } = await supabaseAdmin
       .from("users")
       .select("id")
       .eq("firebase_uid", verifiedUser.uid)
@@ -107,7 +108,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Get user ID from verified Firebase UID
-    const { data: userData } = await supabase
+    const { data: userData } = await supabaseAdmin
       .from("users")
       .select("id")
       .eq("firebase_uid", verifiedUser.uid)
@@ -236,7 +237,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get user ID from verified Firebase UID
-    const { data: userData } = await supabase
+    const { data: userData } = await supabaseAdmin
       .from("users")
       .select("id")
       .eq("firebase_uid", verifiedUser.uid)

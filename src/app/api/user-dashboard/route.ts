@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import supabase from '@/lib/supabase';
+import supabaseAdmin from '@/lib/supabase-admin';
 
 // Helper function to get user_id from firebase_uid
 async function getUserId(firebaseUid: string): Promise<number | null> {
-  const { data, error } = await supabase
+  const { data, error } = await supabaseAdmin
     .from('users')
     .select('id')
     .eq('firebase_uid', firebaseUid)
@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ moduleIds: [] }); // User not found, return empty
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('user_dashboard_modules')
       .select('module_ids')
       .eq('user_id', userId)
@@ -65,7 +65,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Upsert - insert or update if exists
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from('user_dashboard_modules')
       .upsert(
         { 
