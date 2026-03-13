@@ -187,7 +187,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Insert video with sanitized data
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("videos")
       .insert({
         module_id,
