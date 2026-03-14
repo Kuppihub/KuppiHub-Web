@@ -118,6 +118,7 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
         {video.youtube_links.map((url, index) => {
           // Create video data object and encode as base64
           const videoData = {
+            kuppiId: video.id,
             videoUrl: url,
             videoTitle: video.title,
             description: video.description || '',

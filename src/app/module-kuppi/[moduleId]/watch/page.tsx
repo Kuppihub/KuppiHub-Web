@@ -3,8 +3,10 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import VideoPlayer from "../../../components/VideoPlayer";
 import { useMemo } from "react";
+import KuppiFeedback from "./KuppiFeedback";
 
 interface VideoData {
+  kuppiId?: number;
   videoUrl: string;
   videoTitle?: string;
   description?: string;
@@ -67,6 +69,10 @@ export default function WatchVideoPage() {
       description={videoData.description}
       studentName={videoData.studentName}
       onBack={handleBack}
-    />
+    >
+      {videoData.kuppiId && (
+        <KuppiFeedback kuppiId={String(videoData.kuppiId)} />
+      )}
+    </VideoPlayer>
   );
 }

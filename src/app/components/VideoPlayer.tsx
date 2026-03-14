@@ -8,6 +8,7 @@ interface VideoPlayerProps {
   description?: string;
   studentName?: string;
   onBack?: () => void;
+  children?: React.ReactNode;
 }
 
 export default function VideoPlayer({ 
@@ -15,7 +16,8 @@ export default function VideoPlayer({
   videoTitle, 
   description, 
   studentName, 
-  onBack 
+  onBack,
+  children
 }: VideoPlayerProps) {
 
   const extractYouTubeId = (url: string): string | null => {
@@ -115,6 +117,12 @@ export default function VideoPlayer({
                 <p className="text-gray-500 text-center">No additional information available</p>
               )}
             </div>
+
+            {children && (
+              <div className="mt-8">
+                {children}
+              </div>
+            )}
       </div>
     </div>
   );
