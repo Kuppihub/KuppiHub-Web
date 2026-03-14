@@ -3,6 +3,8 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import KuppiCommentsInline from './KuppiCommentsInline';
+import KuppiReviewsInline from './KuppiReviewsInline';
 
 interface Video {
   id: number;
@@ -246,6 +248,9 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
           ))}
         </div>
       </div>
+
+      <KuppiReviewsInline kuppiId={String(video.id)} />
+      <KuppiCommentsInline kuppiId={String(video.id)} />
     </motion.div>
   );
 }

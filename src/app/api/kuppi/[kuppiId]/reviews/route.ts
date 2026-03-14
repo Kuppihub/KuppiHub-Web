@@ -43,9 +43,9 @@ export async function POST(
     const title = typeof body?.title === "string" ? body.title.trim() : "";
     const text = typeof body?.body === "string" ? body.body.trim() : "";
 
-    if (!rating || rating < 1 || rating > 5 || !text) {
+    if (!rating || rating < 1 || rating > 5) {
       return NextResponse.json(
-        { error: "Rating (1-5) and review are required" },
+        { error: "Rating (1-5) is required" },
         { status: 400 }
       );
     }
