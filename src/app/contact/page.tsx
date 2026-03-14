@@ -8,6 +8,9 @@ export default function Contact() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [submitStatus, setSubmitStatus] = useState('');
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorDialogMessage, setErrorDialogMessage] = useState('');
   const [turnstileToken, setTurnstileToken] = useState('');
 
   useEffect(() => {
@@ -44,6 +47,8 @@ export default function Contact() {
 
     if (!turnstileToken) {
       setSubmitStatus('Please complete the verification.');
+      setErrorDialogMessage('Please complete the verification.');
+      setShowErrorDialog(true);
       return;
     }
 
@@ -60,13 +65,18 @@ export default function Contact() {
 
       if (res.ok) {
         setSubmitStatus('Message sent successfully!');
+        setShowSuccessDialog(true);
         setFormData({ name: '', email: '', message: '' });
         setTurnstileToken('');
       } else {
         setSubmitStatus(result.error || 'Failed to send message');
+        setErrorDialogMessage(result.error || 'Failed to send message');
+        setShowErrorDialog(true);
       }
     } catch (error) {
       setSubmitStatus('Error sending message');
+      setErrorDialogMessage('Error sending message');
+      setShowErrorDialog(true);
       console.error(error);
     }
   };
@@ -160,6 +170,45 @@ export default function Contact() {
           </div>
         </div>
       </div>
+      {showSuccessDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 text-green-600">
+              ✓
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Success</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              {submitStatus || 'Message sent successfully!'}
+            </p>
+            <button
+              onClick={() => setShowSuccessDialog(false)}
+              className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
+
+      {showErrorDialog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
+          <div className="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 p-6 text-center">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-red-100 text-red-600">
+              !
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900">Error</h3>
+            <p className="mt-2 text-sm text-gray-600">
+              {errorDialogMessage || 'Failed to send message'}
+            </p>
+            <button
+              onClick={() => setShowErrorDialog(false)}
+              className="mt-4 w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 transition"
+            >
+              OK
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
