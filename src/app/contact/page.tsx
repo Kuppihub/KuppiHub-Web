@@ -1,17 +1,38 @@
 'use client';
 import ThreeDModel from '../components/ThreeDModel';
 import React, { useEffect, useState } from 'react';
+import Script from 'next/script';
 import Preloader from '../components/Preloader';
 
 export default function Contact() {
   const [loading, setLoading] = useState(true);
   const [formData, setFormData] = useState({ name: '', email: '', message: '' });
   const [submitStatus, setSubmitStatus] = useState('');
+  const [turnstileToken, setTurnstileToken] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
     const timer = setTimeout(() => setLoading(false), 1000);
     return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    (window as any).onTurnstileSuccess = (token: string) => {
+      setTurnstileToken(token);
+    };
+    (window as any).onTurnstileExpire = () => {
+      setTurnstileToken('');
+    };
+    (window as any).onTurnstileError = () => {
+      setTurnstileToken('');
+    };
+
+    return () => {
+      delete (window as any).onTurnstileSuccess;
+      delete (window as any).onTurnstileExpire;
+      delete (window as any).onTurnstileError;
+    };
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -20,13 +41,19 @@ export default function Contact() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!turnstileToken) {
+      setSubmitStatus('Please complete the verification.');
+      return;
+    }
+
     setSubmitStatus('Submitting...');
 
     try {
       const res = await fetch('/api/contact', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({ ...formData, turnstileToken }),
       });
 
       const result = await res.json();
@@ -34,6 +61,7 @@ export default function Contact() {
       if (res.ok) {
         setSubmitStatus('Message sent successfully!');
         setFormData({ name: '', email: '', message: '' });
+        setTurnstileToken('');
       } else {
         setSubmitStatus(result.error || 'Failed to send message');
       }
@@ -47,6 +75,11 @@ export default function Contact() {
 
   return (
     <div className="min-h-screen bg-white py-12 px-4 sm:px-6 lg:px-8">
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        async
+        defer
+      />
       <div className="max-w-5xl mx-auto">
         <h2 className="text-2xl sm:text-3xl font-extrabold text-gray-900 mb-4">
           Contact Us
@@ -103,6 +136,13 @@ export default function Contact() {
               ></textarea>
             </div>
 
+            <div
+              className="cf-turnstile"
+              data-sitekey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY}
+              data-callback="onTurnstileSuccess"
+              data-expired-callback="onTurnstileExpire"
+              data-error-callback="onTurnstileError"
+            ></div>
             <div>
               <button
                 type="submit"
