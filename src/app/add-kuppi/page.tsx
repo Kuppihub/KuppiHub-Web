@@ -16,6 +16,7 @@ import Dialog from "@mui/material/Dialog";
 import DialogContent from "@mui/material/DialogContent";
 import AddIcon from "@mui/icons-material/Add";
 import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ErrorOutlineIcon from "@mui/icons-material/ErrorOutline";
 import NewTutorCard from "./components/NewTutorCard";
 import {
   PageHeader,
@@ -37,6 +38,8 @@ export default function AddKuppiPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<{ type: "success" | "error"; message: string } | null>(null);
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorDialogMessage, setErrorDialogMessage] = useState("");
   
   // Module search state
   const [moduleSearch, setModuleSearch] = useState("");
@@ -90,22 +93,29 @@ export default function AddKuppiPage() {
     setFormData(prev => ({ ...prev, ...updates }));
   };
 
+  const openErrorDialog = (message: string) => {
+    setSubmitStatus({ type: "error", message });
+    setErrorDialogMessage(message);
+    setShowErrorDialog(true);
+  };
+
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSubmitStatus(null);
+    setShowErrorDialog(false);
 
     // Validation
     if (!formData.moduleId) {
-      setSubmitStatus({ type: "error", message: "Please select a module" });
+      openErrorDialog("Please select a module");
       return;
     }
     if (!formData.title.trim()) {
-      setSubmitStatus({ type: "error", message: "Please enter a title" });
+      openErrorDialog("Please enter a title");
       return;
     }
     if (!formData.description.trim()) {
-      setSubmitStatus({ type: "error", message: "Please enter a description" });
+      openErrorDialog("Please enter a description");
       return;
     }
 
@@ -118,13 +128,13 @@ export default function AddKuppiPage() {
 
     // Must have at least one link
     if (youtubeLinks.length === 0 && telegramLinks.length === 0 && gdriveLinks.length === 0 && onedriveLinks.length === 0 && materialLinks.length === 0) {
-      setSubmitStatus({ type: "error", message: "Please add at least one video or material link" });
+      openErrorDialog("Please add at least one video or material link");
       return;
     }
 
     // Validate domain restriction
     if (formData.hasRestriction && formData.allowedDomains.length === 0) {
-      setSubmitStatus({ type: "error", message: "Please select at least one domain or disable the restriction" });
+      openErrorDialog("Please select at least one domain or disable the restriction");
       return;
     }
 
@@ -161,7 +171,7 @@ export default function AddKuppiPage() {
       setSelectedModule(null);
       setModuleSearch("");
     } catch (error) {
-      setSubmitStatus({ type: "error", message: error instanceof Error ? error.message : "Failed to submit. Please try again." });
+      openErrorDialog(error instanceof Error ? error.message : "Failed to submit. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -183,6 +193,9 @@ export default function AddKuppiPage() {
 
   const handleSuccessDialogClose = () => {
     setShowSuccessDialog(false);
+  };
+  const handleErrorDialogClose = () => {
+    setShowErrorDialog(false);
   };
 
   return (
@@ -393,6 +406,73 @@ export default function AddKuppiPage() {
         </DialogContent>
       </Dialog>
 
+      {/* Error Dialog */}
+      <Dialog
+        open={showErrorDialog}
+        onClose={handleErrorDialogClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1)",
+          },
+        }}
+      >
+        <DialogContent sx={{ textAlign: "center", py: 4, px: 3 }}>
+          <motion.div
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ type: "spring", stiffness: 200, damping: 20 }}
+          >
+            <ErrorOutlineIcon
+              sx={{
+                fontSize: 60,
+                color: "#ef4444",
+                mb: 2,
+              }}
+            />
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="text-xl font-semibold text-gray-800 mb-1"
+          >
+            Something Went Wrong
+          </motion.h2>
+          <motion.p
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="text-sm text-gray-600 mb-4"
+          >
+            {errorDialogMessage || "Failed to submit. Please try again."}
+          </motion.p>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.4 }}
+          >
+            <Button
+              onClick={handleErrorDialogClose}
+              variant="contained"
+              sx={{
+                background: "linear-gradient(to right, #ef4444, #f97316)",
+                borderRadius: 2,
+                textTransform: "none",
+                fontWeight: 600,
+                px: 4,
+                "&:hover": {
+                  background: "linear-gradient(to right, #dc2626, #ea580c)",
+                },
+              }}
+            >
+              Close
+            </Button>
+          </motion.div>
+        </DialogContent>
+      </Dialog>
 
     </div>
   );
