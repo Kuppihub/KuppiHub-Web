@@ -71,6 +71,30 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
 
+        <Script id="ld-json-organization" type="application/ld+json">
+          {JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "EducationalOrganization",
+            name: "Kuppi Hub",
+            url: "https://kuppihub.org",
+            logo: "https://kuppihub.org/logo.png",
+            description:
+              "Student-made tutorials to help you study smarter.",
+            contactPoint: [
+              {
+                "@type": "ContactPoint",
+                contactType: "customer support",
+                email: "contact@kuppihub.org",
+              },
+            ],
+            sameAs: [
+              "https://www.facebook.com/profile.php?id=61574212569091",
+              "https://github.com/kuppihub",
+              "https://www.linkedin.com/company/cse-23/",
+            ],
+          })}
+        </Script>
+
 
         <Script
           async
