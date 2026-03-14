@@ -10,6 +10,7 @@ import ScrollToTopButton from "./components/ScrollToTopButton";
 import NotificationSnackbar from "./components/NotificationSnackbar";
 import AppDownloadBanner from "./components/AppDownloadBanner";
 import LiveCounter from "./components/LiveCounter";
+import ServiceWorkerRegistrar from "./components/ServiceWorkerRegistrar";
 import Providers from "./providers";
 
 const geistSans = Geist({
@@ -91,6 +92,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen flex flex-col`}
       >
         <Providers>
+          <ServiceWorkerRegistrar />
           <LiveCounter />
           <AppDownloadBanner />
           <Header />
