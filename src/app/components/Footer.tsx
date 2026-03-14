@@ -57,6 +57,12 @@ export default function Footer() {
   >
     Contact
   </Link>
+  <Link
+    href="/privacy-policy"
+    className="border border-white px-3 py-1 rounded hover:text-blue-400 hover:border-blue-400 transform hover:scale-105 transition duration-200"
+  >
+    Privacy
+  </Link>
 
     <Link
     href="/faq"
