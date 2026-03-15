@@ -4,6 +4,8 @@ import clientPromise from "@/lib/mongodb";
 import { authenticateRequest } from "@/lib/firebase-admin";
 import { rateLimit } from "@/lib/rate-limit";
 
+const MAX_COMMENT_LENGTH = 1000;
+
 const getDb = async () => {
   const client = await clientPromise;
   return client.db(process.env.MONGODB_DB || "kuppihub");
@@ -90,6 +92,13 @@ export async function POST(
 
     if (!text) {
       return NextResponse.json({ error: "Comment is required" }, { status: 400 });
+    }
+
+    if (text.length > MAX_COMMENT_LENGTH) {
+      return NextResponse.json(
+        { error: `Comment must be ${MAX_COMMENT_LENGTH} characters or less` },
+        { status: 400 }
+      );
     }
 
     const db = await getDb();

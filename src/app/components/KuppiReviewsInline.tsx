@@ -7,6 +7,7 @@ import { Send } from "lucide-react";
 
 interface Review {
   _id: string;
+  userId?: string;
   userName: string;
   rating: number;
   title?: string;
@@ -18,8 +19,12 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewRating, setReviewRating] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+  const currentUserReview = useMemo(
+    () => reviews.find((review) => review.userId === user?.uid) ?? null,
+    [reviews, user?.uid]
+  );
 
   const averageRating = useMemo(() => {
     if (reviews.length === 0) return 0;
@@ -48,11 +53,19 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
     fetchReviews();
   }, [kuppiId]);
 
+  useEffect(() => {
+    setReviewRating(currentUserReview?.rating ?? null);
+  }, [currentUserReview]);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     if (!user) {
       setMessage("Please log in to submit a review.");
+      return;
+    }
+    if (reviewRating === null) {
+      setMessage("Please select a rating.");
       return;
     }
     try {
@@ -73,6 +86,7 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
         }
         return [data.review, ...prev];
       });
+      setReviewRating(null);
       setMessage(data.updated ? "Review updated." : "Review submitted.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to submit review");
@@ -114,7 +128,9 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
                   onClick={() => setReviewRating(r)}
                   aria-label={`Rate ${r} out of 5`}
                   className={`text-2xl leading-none ${
-                    r <= reviewRating ? "text-yellow-500" : "text-gray-300"
+                    reviewRating !== null && r <= reviewRating
+                      ? "text-yellow-500"
+                      : "text-gray-300"
                   } hover:text-yellow-500 transition`}
                 >
                   ★
@@ -122,7 +138,7 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
               ))}
             </div>
             <span className="text-sm text-gray-500 whitespace-nowrap">
-              {reviewRating}/5
+              {reviewRating === null ? "" : `${reviewRating}/5`}
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0">
@@ -133,7 +149,7 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
             )}
             <button
               type="submit"
-              disabled={!user}
+              disabled={!user || reviewRating === null}
               aria-label="Submit rating"
               className="h-11 w-11 flex items-center justify-center rounded-full bg-indigo-600 text-white text-base font-medium hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >

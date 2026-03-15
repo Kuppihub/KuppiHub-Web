@@ -4,8 +4,11 @@ import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { authDelete, authGet, authPost } from "@/lib/auth-fetch";
 
+const MAX_COMMENT_LENGTH = 1000;
+
 interface Review {
   _id: string;
+  userId?: string;
   userName: string;
   rating: number;
   title?: string;
@@ -30,7 +33,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   const [reviews, setReviews] = useState<Review[]>([]);
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
-  const [reviewRating, setReviewRating] = useState(5);
+  const [reviewRating, setReviewRating] = useState<number | null>(null);
   const [reviewTitle, setReviewTitle] = useState("");
   const [reviewBody, setReviewBody] = useState("");
   const [commentBody, setCommentBody] = useState("");
@@ -39,6 +42,10 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   const [message, setMessage] = useState<string | null>(null);
   const getInitial = (name?: string) =>
     name?.trim().charAt(0).toUpperCase() || "U";
+  const currentUserReview = useMemo(
+    () => reviews.find((review) => review.userId === user?.uid) ?? null,
+    [reviews, user?.uid]
+  );
 
   const averageRating = useMemo(() => {
     if (reviews.length === 0) return 0;
@@ -73,11 +80,21 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
     fetchAll();
   }, [kuppiId, user]);
 
+  useEffect(() => {
+    setReviewRating(currentUserReview?.rating ?? null);
+    setReviewTitle(currentUserReview?.title ?? "");
+    setReviewBody(currentUserReview?.body ?? "");
+  }, [currentUserReview]);
+
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setMessage(null);
     if (!user) {
       setMessage("Please log in to submit a review.");
+      return;
+    }
+    if (reviewRating === null) {
+      setMessage("Please select a rating.");
       return;
     }
 
@@ -101,6 +118,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
         }
         return [data.review, ...prev];
       });
+      setReviewRating(null);
       setReviewTitle("");
       setReviewBody("");
       setMessage(data.updated ? "Review updated." : "Review submitted.");
@@ -291,10 +309,14 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
               placeholder={`Reply to ${comment.userName}`}
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
+              maxLength={MAX_COMMENT_LENGTH}
               className="w-full border border-gray-100 rounded-3xl px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200"
               rows={2}
               required
             />
+            <div className="text-right text-xs text-gray-400">
+              {replyBody.length}/{MAX_COMMENT_LENGTH}
+            </div>
             <div className="flex items-center gap-2">
               <button
                 type="submit"
@@ -369,10 +391,15 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
             <div className="flex items-center gap-3">
               <span className="text-gray-900 text-sm font-bold">Rate</span>
               <select
-                value={reviewRating}
-                onChange={(e) => setReviewRating(Number(e.target.value))}
+                value={reviewRating ?? ""}
+                onChange={(e) =>
+                  setReviewRating(e.target.value ? Number(e.target.value) : null)
+                }
                 className="text-sm font-semibold text-gray-600 bg-transparent border-none focus:ring-0 cursor-pointer pr-6 py-0"
               >
+                <option value="" disabled>
+                  Select
+                </option>
                 {[5, 4, 3, 2, 1].map((r) => (
                   <option key={r} value={r}>
                     {r}
@@ -401,6 +428,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
           />
           <button
             type="submit"
+            disabled={!user || reviewRating === null}
             className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-8 rounded-full text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95"
           >
             Submit Review
@@ -461,11 +489,15 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
             placeholder="Ask a question or leave a comment"
             value={commentBody}
             onChange={(e) => setCommentBody(e.target.value)}
+            maxLength={MAX_COMMENT_LENGTH}
             className="w-full h-28 p-5 rounded-3xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200 text-sm placeholder-gray-400 transition-all outline-none"
             rows={3}
             required
           />
           <div className="flex items-center justify-between mt-3">
+            <span className="text-xs text-gray-400">
+              {commentBody.length}/{MAX_COMMENT_LENGTH}
+            </span>
             {!user && (
               <span className="text-xs text-gray-400">Login required to post</span>
             )}
