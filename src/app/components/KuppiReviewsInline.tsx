@@ -23,8 +23,10 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
 
   const averageRating = useMemo(() => {
     if (reviews.length === 0) return 0;
-    const total = reviews.reduce((sum, r) => sum + r.rating, 0);
-    return Math.round((total / reviews.length) * 10) / 10;
+    const valid = reviews.filter((r) => typeof r?.rating === "number");
+    if (valid.length === 0) return 0;
+    const total = valid.reduce((sum, r) => sum + r.rating, 0);
+    return Math.round((total / valid.length) * 10) / 10;
   }, [reviews]);
 
   const fetchReviews = async () => {
@@ -59,24 +61,37 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit review");
-      setReviews((prev) => [data.review, ...prev]);
-      setMessage("Review submitted.");
+      if (!data.review) {
+        throw new Error("Failed to submit review");
+      }
+      setReviews((prev) => {
+        if (data.updated && data.review?._id) {
+          const exists = prev.some((r) => r._id === data.review._id);
+          if (exists) {
+            return prev.map((r) => (r._id === data.review._id ? data.review : r));
+          }
+        }
+        return [data.review, ...prev];
+      });
+      setMessage(data.updated ? "Review updated." : "Review submitted.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to submit review");
     }
   };
 
   return (
-    <div className="mt-5 border-t border-blue-100 pt-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-800">Ratings</h3>
-        <div className="flex items-center gap-2 text-xs text-gray-500">
-          <div className="flex items-center gap-0.5 text-yellow-500">
+    <div className="mt-6 border-t border-blue-100 pt-5">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-base font-semibold text-gray-900">Ratings</h3>
+        <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-0.5 text-yellow-500 text-xl">
             {[1, 2, 3, 4, 5].map((r) => (
               <span key={r}>{r <= Math.round(averageRating) ? "★" : "☆"}</span>
             ))}
           </div>
-          <span>{averageRating || 0}</span>
+          <span className="text-base font-semibold text-gray-700">
+            {averageRating || 0}
+          </span>
           <span>({reviews.length})</span>
         </div>
       </div>
@@ -87,10 +102,10 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="mb-4">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 rounded-lg border border-gray-100 bg-gray-50 px-3 py-3">
+      <form onSubmit={handleSubmit} className="mb-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4">
           <div className="flex items-center gap-2">
-            <span className="text-xs text-gray-700">Rate</span>
+            <span className="text-sm font-semibold text-gray-700">Rate</span>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((r) => (
                 <button
@@ -98,7 +113,7 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
                   type="button"
                   onClick={() => setReviewRating(r)}
                   aria-label={`Rate ${r} out of 5`}
-                  className={`text-xl leading-none ${
+                  className={`text-2xl leading-none ${
                     r <= reviewRating ? "text-yellow-500" : "text-gray-300"
                   } hover:text-yellow-500 transition`}
                 >
@@ -106,19 +121,19 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
                 </button>
               ))}
             </div>
-            <span className="text-xs text-gray-500">{reviewRating}/5</span>
+            <span className="text-sm text-gray-500">{reviewRating}/5</span>
           </div>
           <div className="flex items-center gap-3">
             {!user && (
-              <span className="text-xs text-gray-500">Login required</span>
+              <span className="text-sm text-gray-400">Login required</span>
             )}
             <button
               type="submit"
               disabled={!user}
               aria-label="Submit rating"
-              className="h-9 w-9 flex items-center justify-center rounded-full bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="h-11 w-11 flex items-center justify-center rounded-full bg-indigo-600 text-white text-base font-medium hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              <Send className="h-4 w-4" />
+              <Send className="h-5 w-5" />
             </button>
           </div>
         </div>

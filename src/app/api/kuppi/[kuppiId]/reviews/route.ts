@@ -58,10 +58,30 @@ export async function POST(
     });
 
     if (existing) {
-      return NextResponse.json(
-        { error: "You already submitted a review for this Kuppi" },
-        { status: 409 }
+      await db.collection("reviews").updateOne(
+        { _id: existing._id },
+        {
+          $set: {
+            rating,
+            title,
+            body: text,
+            updatedAt: new Date(),
+          },
+        }
       );
+
+      const refreshed = await db.collection("reviews").findOne({ _id: existing._id });
+      if (!refreshed) {
+        return NextResponse.json(
+          { error: "Failed to update review" },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        review: refreshed,
+        updated: true,
+      });
     }
 
     const doc = {
@@ -78,7 +98,10 @@ export async function POST(
 
     const result = await db.collection("reviews").insertOne(doc);
 
-    return NextResponse.json({ review: { ...doc, _id: result.insertedId } });
+    return NextResponse.json({
+      review: { ...doc, _id: result.insertedId },
+      updated: false,
+    });
   } catch (error) {
     console.error("Error creating review:", error);
     return NextResponse.json({ error: "Failed to create review" }, { status: 500 });

@@ -23,6 +23,8 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
   const [message, setMessage] = useState<string | null>(null);
+  const getInitial = (name?: string) =>
+    name?.trim().charAt(0).toUpperCase() || "U";
 
   const fetchComments = async () => {
     setLoading(true);
@@ -136,37 +138,46 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
 
   const renderComment = (comment: Comment, depth = 0) => {
     const commentChildren = commentTree.children.get(comment._id) ?? [];
+    const isReply = depth > 0;
+    const avatarInitial = getInitial(comment.userName);
 
     return (
-      <div key={comment._id} style={{ marginLeft: depth * 16 }}>
-        <div className="border border-gray-100 rounded-lg p-3">
-          <div className="flex items-center justify-between mb-1">
-            <div className="text-xs font-semibold text-gray-800">
-              {comment.userName}
+      <div key={comment._id} className={isReply ? "ml-8" : undefined}>
+        <div
+          className={[
+            "rounded-[2rem] p-5 border shadow-sm transition-shadow",
+            isReply ? "bg-gray-50/60 border-gray-100" : "bg-white border-gray-50",
+            "hover:shadow-md",
+          ].join(" ")}
+        >
+          <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">
+                {avatarInitial}
+              </div>
+              <div>
+                <p className="font-bold text-gray-900 text-xs">{comment.userName}</p>
+                <p className="text-gray-400 text-[10px]">
+                  {new Date(comment.createdAt).toLocaleDateString()}
+                </p>
+              </div>
             </div>
-            <div className="text-[10px] text-gray-500">
-              {new Date(comment.createdAt).toLocaleDateString()}
+            <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-1">
+              <button
+                type="button"
+                onClick={() => handleVote(comment._id, 1)}
+                className="p-1 hover:text-rose-500 text-gray-400 transition-colors"
+                aria-label="Love"
+              >
+                ♥
+              </button>
+              <span className="text-gray-700 text-[10px] font-bold px-1">
+                {comment.score || 0}
+              </span>
             </div>
           </div>
-          <p className="text-xs text-gray-700 mb-2">{comment.body}</p>
-          <div className="flex items-center gap-2 text-xs flex-wrap">
-            <button
-              type="button"
-              onClick={() => handleVote(comment._id, 1)}
-              className="px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
-              aria-label="Upvote"
-            >
-              ↑
-            </button>
-            <button
-              type="button"
-              onClick={() => handleVote(comment._id, -1)}
-              className="px-2 py-1 rounded bg-gray-100 text-gray-700 hover:bg-gray-200"
-              aria-label="Downvote"
-            >
-              ↓
-            </button>
-            <span className="text-gray-600">Score: {comment.score || 0}</span>
+          <p className="text-gray-600 text-xs leading-relaxed mb-4">{comment.body}</p>
+          <div className="flex items-center gap-4">
             <button
               type="button"
               onClick={() => {
@@ -177,7 +188,7 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
                 setReplyToId((prev) => (prev === comment._id ? null : comment._id));
                 setReplyBody("");
               }}
-              className="text-blue-600 hover:text-blue-700"
+              className="flex items-center gap-1.5 text-gray-400 text-xs font-bold hover:text-indigo-600 transition-colors"
             >
               Reply
             </button>
@@ -185,7 +196,7 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
               <button
                 type="button"
                 onClick={() => handleDelete(comment._id)}
-                className="text-red-600 hover:text-red-700"
+                className="flex items-center gap-1.5 text-gray-400 text-xs font-bold hover:text-rose-500 transition-colors"
               >
                 Delete
               </button>
@@ -202,14 +213,14 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
               placeholder={`Reply to ${comment.userName}`}
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
-              className="w-full border border-gray-200 rounded-md px-3 py-2 text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full border border-gray-100 rounded-3xl px-4 py-3 text-xs bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200"
               rows={2}
               required
             />
             <div className="flex items-center gap-2">
               <button
                 type="submit"
-                className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs hover:bg-blue-700 transition"
+                className="px-4 py-1.5 rounded-full bg-indigo-600 text-white text-xs hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 active:scale-95"
               >
                 Post reply
               </button>
@@ -219,7 +230,7 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
                   setReplyToId(null);
                   setReplyBody("");
                 }}
-                className="text-xs text-gray-500"
+                className="text-xs text-gray-400"
               >
                 Cancel
               </button>
@@ -237,45 +248,47 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
   };
 
   return (
-    <div className="mt-5 border-t border-blue-100 pt-4">
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold text-gray-800">Comments</h3>
+    <div className="mt-6">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-base font-semibold text-gray-900">Comments</h3>
+          <p className="text-xs text-gray-400">{comments.length} discussions</p>
+        </div>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="text-xs text-blue-600 hover:text-blue-700"
+          className="text-xs font-semibold text-indigo-600 hover:text-indigo-700"
         >
-          {open ? "Hide" : "Show"} ({comments.length})
+          {open ? "Hide" : "Show"}
         </button>
       </div>
 
       {!open ? null : (
-        <>
+        <div className="bg-white rounded-[2.5rem] p-6 border border-gray-100 shadow-[0_10px_30px_-10px_rgba(0,0,0,0.04)]">
           {message && (
-            <div className="mb-3 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
+            <div className="mb-5 inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-4 py-2 rounded-full border border-indigo-100">
+              <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
               {message}
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-2 mb-4">
+          <form onSubmit={handleSubmit} className="mb-6">
             <textarea
-              placeholder="Add a comment"
+              placeholder="Add a comment..."
               value={commentBody}
               onChange={(e) => setCommentBody(e.target.value)}
-              className="w-full border border-gray-200 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-              rows={2}
+              className="w-full h-24 p-4 rounded-3xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200 text-sm placeholder-gray-400 transition-all outline-none"
+              rows={3}
               required
             />
-            <div className="flex items-center gap-3">
+            <div className="flex items-center justify-between mt-3">
+              {!user && <span className="text-xs text-gray-400">Login required</span>}
               <button
                 type="submit"
-                className="px-3 py-1.5 rounded-md bg-blue-600 text-white text-xs hover:bg-blue-700 transition"
+                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-8 rounded-full text-xs transition-all shadow-lg shadow-indigo-100 active:scale-95"
               >
                 Post
               </button>
-              {!user && (
-                <span className="text-xs text-gray-500">Login required</span>
-              )}
             </div>
           </form>
 
@@ -284,15 +297,14 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
           ) : comments.length === 0 ? (
             <p className="text-xs text-gray-500">No comments yet.</p>
           ) : (
-            <div className="space-y-3">
-              {commentTree.roots.map((comment) => renderComment(comment))}
-            </div>
+            <div className="space-y-5">{commentTree.roots.map((c) => renderComment(c))}</div>
           )}
-        </>
+        </div>
       )}
 
       {message && !open && (
-        <div className="mb-3 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
+        <div className="mb-3 inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-4 py-2 rounded-full border border-indigo-100">
+          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
           {message}
         </div>
       )}
