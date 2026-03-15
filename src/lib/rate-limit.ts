@@ -11,6 +11,14 @@ export type RateLimitResult = {
   retryAfterMs?: number;
 };
 
+type RateLimitDoc = {
+  _id: string;
+  windowStart: Date;
+  count: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 const getDb = async () => {
   const client = await clientPromise;
   return client.db(process.env.MONGODB_DB || "kuppihub");
@@ -22,7 +30,7 @@ export async function rateLimit(
 ): Promise<RateLimitResult> {
   try {
     const db = await getDb();
-    const col = db.collection("rate_limits");
+    const col = db.collection<RateLimitDoc>("rate_limits");
     const now = new Date();
     const threshold = new Date(now.getTime() - windowMs);
 
@@ -32,8 +40,8 @@ export async function rateLimit(
       { returnDocument: "after" }
     );
 
-    if (updated && updated.value) {
-      return { allowed: true, remaining: Math.max(0, limit - updated.value.count) };
+    if (updated) {
+      return { allowed: true, remaining: Math.max(0, limit - updated.count) };
     }
 
     const existing = await col.findOne({ _id: key });

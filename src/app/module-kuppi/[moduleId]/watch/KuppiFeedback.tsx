@@ -22,6 +22,7 @@ interface Comment {
   createdAt: string;
   parentId?: string | null;
   canDelete?: boolean;
+  likedByMe?: boolean;
 }
 
 export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
@@ -119,6 +120,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
       const res = await authPost(`/api/kuppi/${kuppiId}/comments`, {
         body,
         parentId: parentId ?? null,
+        userPhoto: user?.photoURL || null,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to post comment");
@@ -152,7 +154,11 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to vote");
       setComments((prev) =>
-        prev.map((c) => (c._id === commentId ? { ...c, score: data.score } : c))
+        prev.map((c) =>
+          c._id === commentId
+            ? { ...c, score: data.score, likedByMe: data.liked ?? c.likedByMe }
+            : c
+        )
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to vote");
@@ -199,6 +205,8 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
     const commentChildren = commentTree.children.get(comment._id) ?? [];
     const isReply = depth > 0;
     const avatarInitial = getInitial(comment.userName);
+    const avatarPhoto =
+      comment.userPhoto || (comment.canDelete ? user?.photoURL : null);
 
     return (
       <div key={comment._id} className={isReply ? "ml-8" : undefined}>
@@ -212,10 +220,10 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
           <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold overflow-hidden">
-                {comment.userPhoto ? (
+                {avatarPhoto ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={comment.userPhoto}
+                    src={avatarPhoto}
                     alt={comment.userName}
                     className="w-full h-full object-cover"
                   />
@@ -234,7 +242,9 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
               <button
                 type="button"
                 onClick={() => handleVote(comment._id, 1)}
-                className="p-1 hover:text-rose-500 text-gray-400 transition-colors"
+                className={`p-1 transition-colors ${
+                  comment.likedByMe ? "text-rose-500" : "text-gray-400 hover:text-rose-500"
+                }`}
                 aria-label="Love"
               >
                 ♥

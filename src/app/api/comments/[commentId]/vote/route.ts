@@ -55,16 +55,30 @@ export async function POST(
     });
 
     let delta = value;
+    let liked = true;
     if (existing) {
       if (existing.value === value) {
-        const comment = await db.collection("comments").findOne({ _id: commentId });
-        return NextResponse.json({ score: comment?.score ?? 0 });
+        await db.collection("comment_votes").deleteOne({ _id: existing._id });
+        const updated = await db.collection("comments").findOneAndUpdate(
+          { _id: commentId },
+          { $inc: { score: -existing.value } },
+          { returnDocument: "after" }
+        );
+        const newScore =
+          (updated as { value?: { score?: number } })?.value?.score ??
+          (updated as { score?: number })?.score ??
+          0;
+        return NextResponse.json({
+          score: newScore,
+          liked: false,
+        });
       }
       delta = value - existing.value;
       await db.collection("comment_votes").updateOne(
         { _id: existing._id },
         { $set: { value, updatedAt: new Date() } }
       );
+      liked = value === 1;
     } else {
       await db.collection("comment_votes").insertOne({
         commentId: commentIdParam,
@@ -80,8 +94,12 @@ export async function POST(
       { $inc: { score: delta } },
       { returnDocument: "after" }
     );
+    const newScore =
+      (updated as { value?: { score?: number } })?.value?.score ??
+      (updated as { score?: number })?.score ??
+      0;
 
-    return NextResponse.json({ score: updated?.value?.score ?? 0 });
+    return NextResponse.json({ score: newScore, liked });
   } catch (error) {
     console.error("Error voting on comment:", error);
     return NextResponse.json({ error: "Failed to vote" }, { status: 500 });

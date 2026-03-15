@@ -103,8 +103,8 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
       )}
 
       <form onSubmit={handleSubmit} className="mb-5">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-4">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-row items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 flex-nowrap">
+          <div className="flex items-center gap-2 min-w-0">
             <span className="text-sm font-semibold text-gray-700">Rate</span>
             <div className="flex items-center gap-1">
               {[1, 2, 3, 4, 5].map((r) => (
@@ -121,11 +121,15 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
                 </button>
               ))}
             </div>
-            <span className="text-sm text-gray-500">{reviewRating}/5</span>
+            <span className="text-sm text-gray-500 whitespace-nowrap">
+              {reviewRating}/5
+            </span>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 shrink-0">
             {!user && (
-              <span className="text-sm text-gray-400">Login required</span>
+              <span className="text-sm text-gray-400 whitespace-nowrap">
+                Login required
+              </span>
             )}
             <button
               type="submit"

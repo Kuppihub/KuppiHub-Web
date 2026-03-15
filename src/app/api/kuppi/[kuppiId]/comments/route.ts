@@ -23,6 +23,16 @@ export async function GET(
       .sort({ createdAt: -1 })
       .toArray();
 
+    const commentIdStrings = comments.map((comment) => String(comment._id));
+    const likedSet = new Set<string>();
+    if (user && commentIdStrings.length > 0) {
+      const votes = await db
+        .collection("comment_votes")
+        .find({ userId: user.uid, commentId: { $in: commentIdStrings }, value: 1 })
+        .toArray();
+      votes.forEach((vote) => likedSet.add(vote.commentId));
+    }
+
     const safeComments = comments.map((comment) => ({
       _id: comment._id,
       userName: comment.userName,
@@ -32,6 +42,7 @@ export async function GET(
       score: comment.score ?? 0,
       createdAt: comment.createdAt,
       canDelete: user ? comment.userId === user.uid : false,
+      likedByMe: user ? likedSet.has(String(comment._id)) : false,
     }));
 
     return NextResponse.json({ comments: safeComments });
@@ -70,6 +81,8 @@ export async function POST(
 
     const body = await req.json();
     const text = typeof body?.body === "string" ? body.body.trim() : "";
+    const requestPhoto =
+      typeof body?.userPhoto === "string" ? body.userPhoto.trim() : "";
     const parentId =
       typeof body?.parentId === "string" && body.parentId.trim()
         ? body.parentId.trim()
@@ -80,6 +93,10 @@ export async function POST(
     }
 
     const db = await getDb();
+    const userPhoto =
+      user.photoURL ||
+      (requestPhoto.startsWith("http") ? requestPhoto : "") ||
+      null;
     if (parentId) {
       if (!ObjectId.isValid(parentId)) {
         return NextResponse.json({ error: "Invalid parent comment ID" }, { status: 400 });
@@ -100,7 +117,7 @@ export async function POST(
       kuppiId,
       userId: user.uid,
       userName: user.displayName || user.email || "User",
-      userPhoto: user.photoURL || null,
+      userPhoto,
       body: text,
       parentId,
       score: 0,
@@ -121,6 +138,7 @@ export async function POST(
         score: doc.score,
         createdAt: doc.createdAt,
         canDelete: true,
+        likedByMe: false,
       },
     });
   } catch (error) {
