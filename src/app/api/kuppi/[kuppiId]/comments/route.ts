@@ -54,6 +54,7 @@ export async function POST(
       kuppiId,
       userId: user.uid,
       userName: user.displayName || user.email || "User",
+      userPhoto: user.photoURL || null,
       body: text,
       parentId,
       score: 0,

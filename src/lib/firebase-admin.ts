@@ -36,6 +36,7 @@ export interface VerifiedUser {
   email: string | undefined;
   emailVerified: boolean;
   displayName: string | undefined;
+  photoURL: string | undefined;
 }
 
 /**
@@ -59,6 +60,7 @@ export async function verifyIdToken(idToken: string): Promise<VerifiedUser | nul
       email: decodedToken.email,
       emailVerified: decodedToken.email_verified || false,
       displayName: decodedToken.name,
+      photoURL: decodedToken.picture,
     };
   } catch (error) {
     console.error("Error verifying Firebase ID token:", error);

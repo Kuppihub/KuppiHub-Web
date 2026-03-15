@@ -17,6 +17,7 @@ interface Comment {
   _id: string;
   userId: string;
   userName: string;
+  userPhoto?: string | null;
   body: string;
   score: number;
   createdAt: string;
@@ -208,8 +209,17 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
         >
           <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">
-                {avatarInitial}
+              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold overflow-hidden">
+                {comment.userPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={comment.userPhoto}
+                    alt={comment.userName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  avatarInitial
+                )}
               </div>
               <div>
                 <p className="font-bold text-gray-900 text-sm">{comment.userName}</p>

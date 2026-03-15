@@ -8,6 +8,7 @@ interface Comment {
   _id: string;
   userId: string;
   userName: string;
+  userPhoto?: string | null;
   body: string;
   score: number;
   createdAt: string;
@@ -152,8 +153,17 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
         >
           <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
             <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold">
-                {avatarInitial}
+              <div className="w-9 h-9 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold overflow-hidden">
+                {comment.userPhoto ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={comment.userPhoto}
+                    alt={comment.userName}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  avatarInitial
+                )}
               </div>
               <div>
                 <p className="font-bold text-gray-900 text-xs">{comment.userName}</p>
