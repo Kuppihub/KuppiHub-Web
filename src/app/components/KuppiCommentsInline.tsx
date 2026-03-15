@@ -2,17 +2,17 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { authDelete, authPost } from "@/lib/auth-fetch";
+import { authDelete, authGet, authPost } from "@/lib/auth-fetch";
 
 interface Comment {
   _id: string;
-  userId: string;
   userName: string;
   userPhoto?: string | null;
   body: string;
   score: number;
   createdAt: string;
   parentId?: string | null;
+  canDelete?: boolean;
 }
 
 export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
@@ -30,7 +30,9 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
   const fetchComments = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/kuppi/${kuppiId}/comments`);
+      const res = user
+        ? await authGet(`/api/kuppi/${kuppiId}/comments`)
+        : await fetch(`/api/kuppi/${kuppiId}/comments`);
       const data = await res.json();
       setComments(data.comments || []);
     } catch (error) {
@@ -44,12 +46,12 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
   useEffect(() => {
     if (!kuppiId) return;
     fetchComments();
-  }, [kuppiId]);
+  }, [kuppiId, user]);
 
   useEffect(() => {
     if (!kuppiId || !open) return;
     fetchComments();
-  }, [kuppiId, open]);
+  }, [kuppiId, open, user]);
 
   const submitComment = async (body: string, parentId?: string | null) => {
     setMessage(null);
@@ -202,7 +204,7 @@ export default function KuppiCommentsInline({ kuppiId }: { kuppiId: string }) {
             >
               Reply
             </button>
-            {user?.uid === comment.userId && (
+            {comment.canDelete && (
               <button
                 type="button"
                 onClick={() => handleDelete(comment._id)}

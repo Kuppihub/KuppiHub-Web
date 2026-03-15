@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import clientPromise from "@/lib/mongodb";
 import { authenticateRequest } from "@/lib/firebase-admin";
+import { rateLimit } from "@/lib/rate-limit";
 
 const getDb = async () => {
   const client = await clientPromise;
@@ -58,6 +59,22 @@ export async function POST(
     });
 
     if (existing) {
+      const updateRate = await rateLimit(`review:update:v1:${user.uid}:${kuppiId}`, {
+        limit: 10,
+        windowMs: 10 * 60_000,
+      });
+      if (!updateRate.allowed) {
+        return NextResponse.json(
+          { error: "Too many review updates. Please try again later." },
+          {
+            status: 429,
+            headers: {
+              "Retry-After": String(Math.ceil((updateRate.retryAfterMs ?? 0) / 1000)),
+            },
+          }
+        );
+      }
+
       await db.collection("reviews").updateOne(
         { _id: existing._id },
         {
@@ -82,6 +99,22 @@ export async function POST(
         review: refreshed,
         updated: true,
       });
+    }
+
+    const createRate = await rateLimit(`review:create:v1:${user.uid}:${kuppiId}`, {
+      limit: 10,
+      windowMs: 10 * 60_000,
+    });
+    if (!createRate.allowed) {
+      return NextResponse.json(
+        { error: "Too many review submissions. Please try again later." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((createRate.retryAfterMs ?? 0) / 1000)),
+          },
+        }
+      );
     }
 
     const doc = {

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { authDelete, authPost } from "@/lib/auth-fetch";
+import { authDelete, authGet, authPost } from "@/lib/auth-fetch";
 
 interface Review {
   _id: string;
@@ -15,13 +15,13 @@ interface Review {
 
 interface Comment {
   _id: string;
-  userId: string;
   userName: string;
   userPhoto?: string | null;
   body: string;
   score: number;
   createdAt: string;
   parentId?: string | null;
+  canDelete?: boolean;
 }
 
 export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
@@ -52,7 +52,9 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
     try {
       const [reviewsRes, commentsRes] = await Promise.all([
         fetch(`/api/kuppi/${kuppiId}/reviews`),
-        fetch(`/api/kuppi/${kuppiId}/comments`),
+        user
+          ? authGet(`/api/kuppi/${kuppiId}/comments`)
+          : fetch(`/api/kuppi/${kuppiId}/comments`),
       ]);
       const reviewsData = await reviewsRes.json();
       const commentsData = await commentsRes.json();
@@ -68,7 +70,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   useEffect(() => {
     if (!kuppiId) return;
     fetchAll();
-  }, [kuppiId]);
+  }, [kuppiId, user]);
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -258,7 +260,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
             >
               Reply
             </button>
-            {user?.uid === comment.userId && (
+            {comment.canDelete && (
               <button
                 type="button"
                 onClick={() => handleDelete(comment._id)}

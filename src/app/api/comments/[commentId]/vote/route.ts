@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { ObjectId } from "mongodb";
 import clientPromise from "@/lib/mongodb";
 import { authenticateRequest } from "@/lib/firebase-admin";
+import { rateLimit } from "@/lib/rate-limit";
 
 const getDb = async () => {
   const client = await clientPromise;
@@ -17,6 +18,22 @@ export async function POST(
     const user = await authenticateRequest(req.headers.get("authorization"));
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const rate = await rateLimit(`comment:vote:${user.uid}`, {
+      limit: 30,
+      windowMs: 60_000,
+    });
+    if (!rate.allowed) {
+      return NextResponse.json(
+        { error: "Too many votes. Please slow down." },
+        {
+          status: 429,
+          headers: {
+            "Retry-After": String(Math.ceil((rate.retryAfterMs ?? 0) / 1000)),
+          },
+        }
+      );
     }
 
     if (!ObjectId.isValid(commentIdParam)) {
