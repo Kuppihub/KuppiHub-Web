@@ -5,23 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import KuppiCommentsInline from './KuppiCommentsInline';
 import KuppiReviewsInline from './KuppiReviewsInline';
-
-interface Video {
-  id: number;
-  title: string;
-  youtube_links: string[];
-  telegram_links?: string[];
-  material_urls?: string[];
-  onedrive_cloud_video_urls?: string[];
-  gdrive_cloud_video_urls?: string[];
-  is_kuppi?: boolean;
-  description?: string;
-  language_code?: string;
-  created_at?: string;
-  owner?: {
-    name: string;
-  };
-}
+import { Video } from '../types/video';
 
 interface VideoCardProps {
   video: Video;
@@ -107,6 +91,11 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
         {video.language_code && (
           <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
             Language: {video.language_code.toUpperCase()}
+          </span>
+        )}
+        {video.published_at && (
+          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md">
+            Published: {new Date(video.published_at).toLocaleDateString()}
           </span>
         )}
         {video.created_at && (

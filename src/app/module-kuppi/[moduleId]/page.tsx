@@ -50,18 +50,26 @@ export default function ModuleKuppiPage() {
     setActiveVideoId(activeVideoId === id ? null : id);
   };
 
+  const getReferenceDate = (video: Video) => video.published_at ?? video.created_at;
+  const getReferenceTimestamp = (video: Video) => {
+    const referenceDate = getReferenceDate(video);
+    if (!referenceDate) return 0;
+    const parsed = Date.parse(referenceDate);
+    return Number.isNaN(parsed) ? 0 : parsed;
+  };
+  const getReferenceYear = (video: Video) => {
+    const referenceDate = getReferenceDate(video);
+    if (referenceDate && !Number.isNaN(Date.parse(referenceDate))) {
+      return new Date(referenceDate).getFullYear().toString();
+    }
+    return "Unknown Year";
+  };
+
   const videosByYear = videos
     .slice()
-    .sort((a, b) => {
-      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
-      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
-      return bTime - aTime; // newest first
-    })
+    .sort((a, b) => getReferenceTimestamp(b) - getReferenceTimestamp(a))
     .reduce((acc, video) => {
-      const year =
-        video.created_at && !Number.isNaN(Date.parse(video.created_at))
-          ? new Date(video.created_at).getFullYear().toString()
-          : "Unknown Year";
+      const year = getReferenceYear(video);
       if (!acc[year]) acc[year] = [];
       acc[year].push(video);
       return acc;

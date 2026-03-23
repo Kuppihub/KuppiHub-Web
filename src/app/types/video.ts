@@ -11,6 +11,7 @@ export interface Video {
   description?: string;
   language_code?: string;
   created_at?: string;
+  published_at?: string;
   allowed_domains?: string[]; // e.g., ['@uom.lk', '@cse.mrt.ac.lk'] - null means public
   owner?: {
     name: string;

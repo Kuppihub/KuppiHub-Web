@@ -46,6 +46,7 @@ export async function GET(req) {
         description,
         language_code,
         created_at,
+        published_at,
         allowed_domains,
         owner:students(
           name
@@ -54,7 +55,7 @@ export async function GET(req) {
       .eq('module_id', Number(moduleId))
       .eq('is_hidden', false)
       .eq('is_approved', true)
-      .order('created_at', { ascending: false });
+      .order('published_at', { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
