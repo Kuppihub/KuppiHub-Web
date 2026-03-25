@@ -230,7 +230,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
       <div key={comment._id} className={isReply ? "ml-8" : undefined}>
         <div
           className={[
-            "rounded-[2rem] p-6 border shadow-sm transition-shadow",
+            "rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 border shadow-sm transition-shadow",
             isReply ? "bg-gray-50/60 border-gray-100" : "bg-white border-gray-50",
             "hover:shadow-md",
           ].join(" ")}
@@ -356,7 +356,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6">
       {message && (
         <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-4 py-2 rounded-full border border-indigo-100">
           <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
@@ -364,7 +364,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
         </div>
       )}
 
-      <section className="bg-white rounded-[2.5rem] shadow-md p-6">
+      <section className="bg-white rounded-[1.75rem] sm:rounded-[2.5rem] shadow-md p-5 sm:p-6">
         <div className="flex flex-col items-center mb-8">
           <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
             Community Rating
@@ -386,7 +386,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
           </div>
         </div>
 
-        <form onSubmit={handleReviewSubmit} className="space-y-4 mb-6">
+        <form onSubmit={handleReviewSubmit} className="space-y-3 mb-6">
           <div className="bg-gray-50 rounded-full py-3 px-6 flex justify-between items-center border border-gray-100 shadow-sm">
             <div className="flex items-center gap-3">
               <span className="text-gray-900 text-sm font-bold">Rate</span>
@@ -435,14 +435,14 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
           </button>
         </form>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {reviews.length === 0 && (
             <p className="text-sm text-gray-500">No reviews yet.</p>
           )}
           {reviews.map((review) => (
             <div
               key={review._id}
-              className="bg-white rounded-[2rem] p-6 border border-gray-50 shadow-sm transition-shadow hover:shadow-md"
+              className="bg-white rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 border border-gray-50 shadow-sm transition-shadow hover:shadow-md"
             >
               <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
                 <div className="flex items-center gap-3">
@@ -473,7 +473,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
         </div>
       </section>
 
-      <section className="bg-white rounded-[2.5rem] shadow-md p-6">
+      <section className="bg-white rounded-[1.75rem] sm:rounded-[2.5rem] shadow-md p-5 sm:p-6">
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Comments</h2>
@@ -510,7 +510,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
           </div>
         </form>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {comments.length === 0 && (
             <p className="text-sm text-gray-500">No comments yet.</p>
           )}
