@@ -110,6 +110,7 @@ BEGIN
   END IF;
 
   v_payload := jsonb_build_object(
+    'module_id', NEW.module_id,
     'module_name', COALESCE(v_module_name, ''),
     'module_code', COALESCE(v_module_code, ''),
     'title', COALESCE(NEW.title, ''),
