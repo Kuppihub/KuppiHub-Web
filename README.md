@@ -259,6 +259,37 @@ const { data: faculties, error } = await supabase
   .order('name')
 ```
 
+### Approved Video Email Webhook
+
+When a `videos` row is approved (`is_approved = true` on insert, or `false -> true` on update), a DB trigger sends a POST request to your email service.
+
+1. **Apply migrations**
+   Ensure SQL in `supabase_migrations/` is applied, including:
+   - `20260329_video_approval_email_webhook.sql`
+
+2. **Update database config values**
+   The trigger reads values from `public.system_config`:
+   - `emaildata_webhook_url`
+   - `emaildata_webhook_secret`
+
+   Update them directly in DB when needed:
+   ```sql
+   UPDATE public.system_config
+   SET value = 'https://your-email-endpoint.example', updated_at = now()
+   WHERE name = 'emaildata_webhook_url';
+
+   UPDATE public.system_config
+   SET value = 'your_shared_secret', updated_at = now()
+   WHERE name = 'emaildata_webhook_secret';
+   ```
+
+3. **Verify requests in email service**
+   The trigger sends headers:
+   - `x-webhook-secret: <emaildata_webhook_secret value>`
+   - `x-webhook-source: kuppihub-db-trigger`
+
+   Validate `x-webhook-secret` on the email endpoint before processing.
+
 ## 🎨 Customization
 
 ### Colors and Themes
