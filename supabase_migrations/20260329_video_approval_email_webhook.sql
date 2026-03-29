@@ -43,6 +43,7 @@ DECLARE
   v_module_code TEXT;
   v_webhook_url TEXT;
   v_webhook_secret TEXT;
+  v_emails_list JSONB;
   v_recipient_emails TEXT[];
   v_payload JSONB;
 BEGIN
@@ -64,8 +65,18 @@ BEGIN
     ARRAY_AGG(DISTINCT u.email)
       FILTER (WHERE u.email IS NOT NULL AND u.email <> ''),
     ARRAY[]::TEXT[]
+  ),
+  COALESCE(
+    JSONB_AGG(
+      DISTINCT JSONB_BUILD_OBJECT(
+        'name', COALESCE(NULLIF(u.display_name, ''), split_part(u.email, '@', 1)),
+        'email', u.email
+      )
+    ) FILTER (WHERE u.email IS NOT NULL AND u.email <> ''),
+    '[]'::JSONB
   )
   INTO v_recipient_emails
+     , v_emails_list
   FROM public.user_dashboard_modules udm
   JOIN public.users u ON u.id = udm.user_id
   WHERE udm.module_ids @> jsonb_build_array(NEW.module_id)
@@ -105,8 +116,7 @@ BEGIN
     'description', COALESCE(NEW.description, ''),
     'is-kuppi', COALESCE(NEW.is_kuppi, FALSE),
     'language-code', COALESCE(NEW.language_code, ''),
-    'is_kuppi', COALESCE(NEW.is_kuppi, FALSE),
-    'language_code', COALESCE(NEW.language_code, ''),
+    'emails_list', v_emails_list,
     'emails', to_jsonb(v_recipient_emails),
     'video_id', NEW.id
   );

@@ -289,6 +289,7 @@ When a `videos` row is approved (`is_approved = true` on insert, or `false -> tr
    - `x-webhook-source: kuppihub-db-trigger`
 
    Validate `x-webhook-secret` on the email endpoint before processing.
+   Payload includes `emails_list` as an array of objects: `{ name, email }`.
 
 ## 🎨 Customization
 
