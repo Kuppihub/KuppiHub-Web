@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/supabase";
 import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 import {
@@ -36,7 +35,7 @@ export async function GET(request: NextRequest) {
     }
 
     // Fetch all videos added by this user
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("videos")
       .select(`
         id,
@@ -119,7 +118,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Verify the user owns this video
-    const { data: videoData } = await supabase
+    const { data: videoData } = await supabaseAdmin
       .from("videos")
       .select("id, added_by_user_id")
       .eq("id", video_id)
@@ -193,7 +192,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // Update the video
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("videos")
       .update(updateData)
       .eq("id", video_id)
@@ -248,7 +247,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Get current video state and verify ownership
-    const { data: videoData } = await supabase
+    const { data: videoData } = await supabaseAdmin
       .from("videos")
       .select("id, added_by_user_id, is_hidden")
       .eq("id", video_id)
@@ -265,7 +264,7 @@ export async function PATCH(request: NextRequest) {
     // Toggle is_hidden
     const newHiddenState = !videoData.is_hidden;
 
-    const { data, error } = await supabase
+    const { data, error } = await supabaseAdmin
       .from("videos")
       .update({ is_hidden: newHiddenState })
       .eq("id", video_id)
