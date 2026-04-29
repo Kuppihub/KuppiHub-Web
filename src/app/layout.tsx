@@ -9,7 +9,7 @@ import Header from "./components/Header";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import NotificationSnackbar from "./components/NotificationSnackbar";
 import AppDownloadBanner from "./components/AppDownloadBanner";
-import LiveCounter from "./components/LiveCounter";
+// import LiveCounter from "./components/LiveCounter"; // Temporarily disabled
 import ServiceWorkerRegistrar from "./components/ServiceWorkerRegistrar";
 import Providers from "./providers";
 
@@ -117,7 +117,7 @@ export default function RootLayout({
       >
         <Providers>
           <ServiceWorkerRegistrar />
-          <LiveCounter />
+          {/* <LiveCounter /> */} {/* Temporarily disabled */}
           <AppDownloadBanner />
           <Header />
 

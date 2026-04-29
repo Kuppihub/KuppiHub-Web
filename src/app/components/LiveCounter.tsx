@@ -1,9 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ref, onValue, set, onDisconnect } from 'firebase/database';
-import { getDatabase } from 'firebase/database';
-import { app } from '@/lib/firebase';
+// import { ref, onValue, set, onDisconnect } from 'firebase/database';
+// import { getDatabase } from 'firebase/database';
+// import { app } from '@/lib/firebase';
 
 export default function LiveCounter() {
   const [liveCount, setLiveCount] = useState<number>(0);
@@ -19,43 +19,43 @@ export default function LiveCounter() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    try {
-      const database = getDatabase(app);
-      const visitorsRef = ref(database, 'visitors');
-      let userRef: any = null;
-
-      // Add this user to the active count
-      const userId = Math.random().toString(36).substr(2, 9);
-      userRef = ref(database, `visitors/active/${userId}`);
-      set(userRef, true);
-
-      // Auto-disconnect when user leaves
-      onDisconnect(userRef).remove();
-
-      // Listen for real-time updates
-      onValue(visitorsRef, (snapshot) => {
-        if (snapshot.exists()) {
-          const data = snapshot.val();
-          const activeCount = data.active ? Object.keys(data.active).length : 0;
-          setLiveCount(activeCount);
-        } else {
-          setLiveCount(0);
-        }
-      });
-
-      setIsVisible(true);
-
-      return () => {
-        // Cleanup on unmount
-        if (userRef) {
-          set(userRef, null);
-        }
-      };
-    } catch (error) {
-      console.error('Error setting up live counter:', error);
-    }
-  }, []);
+  // useEffect(() => {
+  //   try {
+  //     const database = getDatabase(app);
+  //     const visitorsRef = ref(database, 'visitors');
+  //     let userRef: any = null;
+  //
+  //     // Add this user to the active count
+  //     const userId = Math.random().toString(36).substr(2, 9);
+  //     userRef = ref(database, `visitors/active/${userId}`);
+  //     set(userRef, true);
+  //
+  //     // Auto-disconnect when user leaves
+  //     onDisconnect(userRef).remove();
+  //
+  //     // Listen for real-time updates
+  //     onValue(visitorsRef, (snapshot) => {
+  //       if (snapshot.exists()) {
+  //         const data = snapshot.val();
+  //         const activeCount = data.active ? Object.keys(data.active).length : 0;
+  //         setLiveCount(activeCount);
+  //       } else {
+  //         setLiveCount(0);
+  //       }
+  //     });
+  //
+  //     setIsVisible(true);
+  //
+  //     return () => {
+  //       // Cleanup on unmount
+  //       if (userRef) {
+  //         set(userRef, null);
+  //       }
+  //     };
+  //   } catch (error) {
+  //     console.error('Error setting up live counter:', error);
+  //   }
+  // }, []);
 
   return (
     <div
