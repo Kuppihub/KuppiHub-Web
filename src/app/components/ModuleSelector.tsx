@@ -431,7 +431,7 @@ export default function ModuleSelector({
                                         }),
                                   }}
                                 >
-                                  {isAdded ? "Added" : "Add"}
+                                  {isAdded ? "Added" : "Add to Dashboard"}
                                 </Button>
                               </div>
                             </CardContent>

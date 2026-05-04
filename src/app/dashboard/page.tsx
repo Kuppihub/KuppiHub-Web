@@ -222,8 +222,7 @@ export default function DashboardPage() {
     router.push(`/module-kuppi/${moduleId}`);
   };
 
-  const handleRemoveModule = async (e: React.MouseEvent, moduleId: number) => {
-    e.stopPropagation();
+  const removeModule = async (moduleId: number) => {
     if (!modules) return;
 
     const updated = modules.filter((m) => m.module_id !== moduleId);
@@ -234,6 +233,11 @@ export default function DashboardPage() {
     if (user?.uid) {
       await syncToCloud(updated);
     }
+  };
+
+  const handleRemoveModule = async (e: React.MouseEvent, moduleId: number) => {
+    e.stopPropagation();
+    await removeModule(moduleId);
   };
 
   const toggleEditMode = () => {
@@ -355,7 +359,13 @@ export default function DashboardPage() {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}
-                onClick={() => handleModuleClick(m.module_id)}
+                onClick={() => {
+                  if (editMode) {
+                    removeModule(m.module_id);
+                    return;
+                  }
+                  handleModuleClick(m.module_id);
+                }}
                 className={`bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-6 border cursor-pointer hover:shadow-xl transition-all duration-300 group ${
                   editMode ? 'border-red-200 hover:scale-100' : 'border-blue-50 active:scale-[0.98] sm:hover:scale-105'
                 }`}
@@ -398,9 +408,7 @@ export default function DashboardPage() {
                       </svg>
                     </span>
                   )}
-                  {editMode && (
-                    <span className="text-red-500 text-xs sm:text-sm font-medium">Tap X to remove</span>
-                  )}
+                  {editMode && <span className="text-red-500 text-xs sm:text-sm font-medium">Tap to remove</span>}
                 </div>
               </motion.div>
             ))}
