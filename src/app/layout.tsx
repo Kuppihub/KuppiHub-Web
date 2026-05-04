@@ -8,7 +8,7 @@ import Footer from "./components/Footer";
 import Header from "./components/Header";
 import ScrollToTopButton from "./components/ScrollToTopButton";
 import NotificationSnackbar from "./components/NotificationSnackbar";
-import AppDownloadBanner from "./components/AppDownloadBanner";
+// import AppDownloadBanner from "./components/AppDownloadBanner";
 // import LiveCounter from "./components/LiveCounter"; // Temporarily disabled
 import ServiceWorkerRegistrar from "./components/ServiceWorkerRegistrar";
 import Providers from "./providers";
@@ -118,7 +118,7 @@ export default function RootLayout({
         <Providers>
           <ServiceWorkerRegistrar />
           {/* <LiveCounter /> */} {/* Temporarily disabled */}
-          <AppDownloadBanner />
+          {/* <AppDownloadBanner /> */}
           <Header />
 
           <main className="flex-1">
