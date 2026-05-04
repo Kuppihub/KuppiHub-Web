@@ -22,29 +22,42 @@ export default function VideoPlayer({
 
   const extractYouTubeId = (url: string): string | null => {
     if (!url) return null;
+    const isValidId = (id: string) => /^[A-Za-z0-9_-]{11}$/.test(id);
     
     // youtu.be format
     if (url.includes('youtu.be/')) {
       const id = url.split('youtu.be/')[1].split('?')[0].split('&')[0];
-      if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) return id;
+      if (id && isValidId(id)) return id;
     }
     
     // youtube.com?v= format
     if (url.includes('v=')) {
       const id = url.split('v=')[1].split('&')[0];
-      if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) return id;
+      if (id && isValidId(id)) return id;
     }
     
     // /embed/ format
     if (url.includes('/embed/')) {
       const id = url.split('/embed/')[1].split('?')[0];
-      if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) return id;
+      if (id && isValidId(id)) return id;
     }
     
     // /v/ format
     if (url.includes('/v/')) {
       const id = url.split('/v/')[1].split('?')[0];
-      if (id && /^[A-Za-z0-9_-]{11}$/.test(id)) return id;
+      if (id && isValidId(id)) return id;
+    }
+
+    // /live/ format
+    if (url.includes('/live/')) {
+      const id = url.split('/live/')[1].split('?')[0];
+      if (id && isValidId(id)) return id;
+    }
+
+    // /shorts/ format
+    if (url.includes('/shorts/')) {
+      const id = url.split('/shorts/')[1].split('?')[0];
+      if (id && isValidId(id)) return id;
     }
 
     return null;

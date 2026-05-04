@@ -34,8 +34,6 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewRating, setReviewRating] = useState<number | null>(null);
-  const [reviewTitle, setReviewTitle] = useState("");
-  const [reviewBody, setReviewBody] = useState("");
   const [commentBody, setCommentBody] = useState("");
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
@@ -82,8 +80,6 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
 
   useEffect(() => {
     setReviewRating(currentUserReview?.rating ?? null);
-    setReviewTitle(currentUserReview?.title ?? "");
-    setReviewBody(currentUserReview?.body ?? "");
   }, [currentUserReview]);
 
   const handleReviewSubmit = async (e: React.FormEvent) => {
@@ -101,8 +97,6 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
     try {
       const res = await authPost(`/api/kuppi/${kuppiId}/reviews`, {
         rating: reviewRating,
-        title: reviewTitle,
-        body: reviewBody,
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to submit review");
@@ -119,8 +113,6 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
         return [data.review, ...prev];
       });
       setReviewRating(null);
-      setReviewTitle("");
-      setReviewBody("");
       setMessage(data.updated ? "Review updated." : "Review submitted.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Failed to submit review");
@@ -364,78 +356,56 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
         </div>
       )}
 
-      <section className="bg-white rounded-[1.75rem] sm:rounded-[2.5rem] shadow-md p-5 sm:p-6">
-        <div className="flex flex-col items-center mb-8">
-          <h2 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">
-            Community Rating
-          </h2>
-          <div className="flex items-center gap-6">
-            <span className="text-7xl font-black text-gray-900">
+      <section className="bg-white rounded-2xl shadow-md p-4 sm:p-5">
+        <div className="border-b border-gray-100 pb-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-lg font-semibold text-gray-900">Reviews</h2>
+            <div className="flex items-center gap-1 text-yellow-500 text-lg">
+              {Array.from({ length: 5 }).map((_, idx) => (
+                <span key={idx}>{idx < Math.round(averageRating) ? "★" : "☆"}</span>
+              ))}
+            </div>
+            <span className="text-sm font-semibold text-gray-800">
               {averageRating || 0}
             </span>
-            <div className="flex flex-col">
-              <div className="flex text-yellow-400 text-4xl">
-                {Array.from({ length: 5 }).map((_, idx) => (
-                  <span key={idx}>{idx < Math.round(averageRating) ? "★" : "☆"}</span>
-                ))}
-              </div>
-              <span className="text-gray-400 text-lg font-medium">
-                Based on {reviews.length} review{reviews.length !== 1 ? "s" : ""}
-              </span>
-            </div>
+            <span className="text-sm text-gray-500">
+              ({reviews.length} review{reviews.length !== 1 ? "s" : ""})
+            </span>
           </div>
         </div>
 
-        <form onSubmit={handleReviewSubmit} className="space-y-3 mb-6">
-          <div className="bg-gray-50 rounded-full py-3 px-6 flex justify-between items-center border border-gray-100 shadow-sm">
-            <div className="flex items-center gap-3">
-              <span className="text-gray-900 text-sm font-bold">Rate</span>
-              <select
-                value={reviewRating ?? ""}
-                onChange={(e) =>
-                  setReviewRating(e.target.value ? Number(e.target.value) : null)
-                }
-                className="text-sm font-semibold text-gray-600 bg-transparent border-none focus:ring-0 cursor-pointer pr-6 py-0"
+        <form onSubmit={handleReviewSubmit} className="mt-4 space-y-3">
+          <div className="flex items-center gap-2 flex-wrap">
+            {[1, 2, 3, 4, 5].map((r) => (
+              <button
+                key={r}
+                type="button"
+                onClick={() => setReviewRating(r)}
+                className={`text-3xl leading-none transition ${
+                  reviewRating !== null && r <= reviewRating
+                    ? "text-yellow-500"
+                    : "text-gray-300 hover:text-yellow-500"
+                }`}
+                aria-label={`Rate ${r} stars`}
               >
-                <option value="" disabled>
-                  Select
-                </option>
-                {[5, 4, 3, 2, 1].map((r) => (
-                  <option key={r} value={r}>
-                    {r}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {!user && (
-              <span className="text-xs text-gray-400">Login required</span>
-            )}
+                ★
+              </button>
+            ))}
+            {!user && <span className="text-xs text-gray-400">Login required</span>}
           </div>
-          <input
-            type="text"
-            placeholder="Title (optional)"
-            value={reviewTitle}
-            onChange={(e) => setReviewTitle(e.target.value)}
-            className="w-full border border-gray-100 rounded-3xl px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200"
-          />
-          <textarea
-            placeholder="Write your review"
-            value={reviewBody}
-            onChange={(e) => setReviewBody(e.target.value)}
-            className="w-full border border-gray-100 rounded-3xl px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200"
-            rows={3}
-            required
-          />
-          <button
-            type="submit"
-            disabled={!user || reviewRating === null}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-8 rounded-full text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95"
-          >
-            Submit Review
-          </button>
+
+          <div className="flex items-center justify-end">
+            <button
+              type="submit"
+              disabled={!user || reviewRating === null}
+              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-full text-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {currentUserReview ? "Update Review" : "Post Review"}
+            </button>
+          </div>
         </form>
 
-        <div className="space-y-3">
+        <div className="space-y-3 mt-5">
           {reviews.length === 0 && (
             <p className="text-sm text-gray-500">No reviews yet.</p>
           )}
