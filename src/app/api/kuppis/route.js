@@ -55,7 +55,11 @@ export async function GET(req) {
       .eq('module_id', Number(moduleId))
       .eq('is_hidden', false)
       .eq('is_approved', true)
-      .order('published_at', { ascending: false });
+      // Primary sort: published date (newest first)
+      // Tie-breakers: latest upload timestamp, then id
+      .order('published_at', { ascending: false })
+      .order('created_at', { ascending: false })
+      .order('id', { ascending: false });
 
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
