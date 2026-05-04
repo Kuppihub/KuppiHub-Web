@@ -73,7 +73,7 @@ export default function FormFields({ formData, onChange }: FormFieldsProps) {
         label="Title"
         value={formData.title}
         onChange={(e) => onChange({ title: e.target.value })}
-        placeholder="e.g., Data Structures - Linked Lists Explained"
+        placeholder="e.g., Applied Statistics Kuppi 01 EE"
         inputProps={{ maxLength: 200 }}
         sx={{
           "& .MuiOutlinedInput-root": {
@@ -91,7 +91,13 @@ export default function FormFields({ formData, onChange }: FormFieldsProps) {
         rows={3}
         value={formData.description}
         onChange={(e) => onChange({ description: e.target.value })}
-        placeholder="Describe what this kuppi covers, topics included, etc."
+        placeholder={`📔 Sections Covered :
+
+Bernoulli Distribution
+Geometric Distribution
+Binomial Distribution
+Negative Binomial Distribution
+Reliability Function`}
         sx={{
           "& .MuiOutlinedInput-root": {
             borderRadius: 2,
