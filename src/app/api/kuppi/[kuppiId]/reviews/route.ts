@@ -8,6 +8,12 @@ const getDb = async () => {
   return client.db(process.env.MONGODB_DB || "kuppihub");
 };
 
+// Helper function to remove sensitive fields from review response
+const sanitizeReview = (review: any) => {
+  const { userName, userId, ...sanitized } = review;
+  return sanitized;
+};
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ kuppiId: string }> }
@@ -21,7 +27,10 @@ export async function GET(
       .sort({ createdAt: -1 })
       .toArray();
 
-    return NextResponse.json({ reviews });
+    // Remove userName from all reviews
+    const sanitizedReviews = reviews.map(sanitizeReview);
+
+    return NextResponse.json({ reviews: sanitizedReviews });
   } catch (error) {
     console.error("Error fetching reviews:", error);
     return NextResponse.json({ error: "Failed to fetch reviews" }, { status: 500 });
@@ -96,7 +105,7 @@ export async function POST(
       }
 
       return NextResponse.json({
-        review: refreshed,
+        review: sanitizeReview(refreshed),
         updated: true,
       });
     }
@@ -132,7 +141,7 @@ export async function POST(
     const result = await db.collection("reviews").insertOne(doc);
 
     return NextResponse.json({
-      review: { ...doc, _id: result.insertedId },
+      review: sanitizeReview({ ...doc, _id: result.insertedId }),
       updated: false,
     });
   } catch (error) {

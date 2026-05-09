@@ -8,7 +8,7 @@ import { Send } from "lucide-react";
 interface Review {
   _id: string;
   userId?: string;
-  userName: string;
+  userName?: string;
   rating: number;
   title?: string;
   body: string;

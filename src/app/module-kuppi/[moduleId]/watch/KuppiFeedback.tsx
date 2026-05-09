@@ -9,7 +9,7 @@ const MAX_COMMENT_LENGTH = 1000;
 interface Review {
   _id: string;
   userId?: string;
-  userName: string;
+  userName?: string;
   rating: number;
   title?: string;
   body: string;
@@ -38,8 +38,6 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   const [replyToId, setReplyToId] = useState<string | null>(null);
   const [replyBody, setReplyBody] = useState("");
   const [message, setMessage] = useState<string | null>(null);
-  const getInitial = (name?: string) =>
-    name?.trim().charAt(0).toUpperCase() || "U";
   const currentUserReview = useMemo(
     () => reviews.find((review) => review.userId === user?.uid) ?? null,
     [reviews, user?.uid]
@@ -214,9 +212,6 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   const renderComment = (comment: Comment, depth = 0) => {
     const commentChildren = commentTree.children.get(comment._id) ?? [];
     const isReply = depth > 0;
-    const avatarInitial = getInitial(comment.userName);
-    const avatarPhoto =
-      comment.userPhoto || (comment.canDelete ? user?.photoURL : null);
 
     return (
       <div key={comment._id} className={isReply ? "ml-8" : undefined}>
@@ -228,25 +223,10 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
           ].join(" ")}
         >
           <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-600 text-xs font-bold overflow-hidden">
-                {avatarPhoto ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarPhoto}
-                    alt={comment.userName}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  avatarInitial
-                )}
-              </div>
-              <div>
-                <p className="font-bold text-gray-900 text-sm">{comment.userName}</p>
-                <p className="text-gray-400 text-[10px]">
-                  {new Date(comment.createdAt).toLocaleDateString()}
-                </p>
-              </div>
+            <div>
+              <p className="text-gray-400 text-[10px]">
+                {new Date(comment.createdAt).toLocaleDateString()}
+              </p>
             </div>
             <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-1">
               <button
@@ -405,42 +385,16 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
           </div>
         </form>
 
-        <div className="space-y-3 mt-5">
-          {reviews.length === 0 && (
-            <p className="text-sm text-gray-500">No reviews yet.</p>
-          )}
-          {reviews.map((review) => (
-            <div
-              key={review._id}
-              className="bg-white rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 border border-gray-50 shadow-sm transition-shadow hover:shadow-md"
-            >
-              <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 text-xs font-bold">
-                    {getInitial(review.userName)}
-                  </div>
-                  <div>
-                    <p className="font-bold text-gray-900 text-sm">{review.userName}</p>
-                    <p className="text-gray-400 text-[10px]">
-                      {new Date(review.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex text-yellow-400 text-xl">
-                  {Array.from({ length: 5 }).map((_, idx) => (
-                    <span key={idx}>{idx < review.rating ? "★" : "☆"}</span>
-                  ))}
-                </div>
-              </div>
-              {review.title && (
-                <div className="text-sm font-semibold text-gray-800 mb-1">
-                  {review.title}
-                </div>
-              )}
-              <p className="text-sm text-gray-600">{review.body}</p>
-            </div>
-          ))}
-        </div>
+       
+     
+         
+           
+             
+          
+    
+  
+
+       
       </section>
 
       <section className="bg-white rounded-[1.75rem] sm:rounded-[2.5rem] shadow-md p-5 sm:p-6">
