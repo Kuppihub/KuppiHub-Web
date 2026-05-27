@@ -4,7 +4,6 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import HeaderSearch from "../components/HeaderSearch";
 import ModuleSelector from "../components/ModuleSelector";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -17,6 +16,10 @@ interface ModuleData {
   video_count?: number;
 }
 
+interface DashboardCachePayload {
+  modules: ModuleData[];
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, signInWithGoogle } = useAuth();
@@ -24,6 +27,7 @@ export default function DashboardPage() {
   const [editMode, setEditMode] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const dashboardCacheKey = `dashboard-cache:${user?.uid ?? "guest"}`;
 
   // Ensure user exists in Supabase before syncing dashboard
   const ensureUserExists = useCallback(async (): Promise<boolean> => {
@@ -142,6 +146,19 @@ export default function DashboardPage() {
     if (typeof window === "undefined" || authLoading) return;
 
     const initializeModules = async () => {
+      const cachedRaw = sessionStorage.getItem(dashboardCacheKey);
+      if (cachedRaw) {
+        try {
+          const cached = JSON.parse(cachedRaw) as DashboardCachePayload;
+          if (Array.isArray(cached.modules)) {
+            setModules(cached.modules);
+            return;
+          }
+        } catch {
+          sessionStorage.removeItem(dashboardCacheKey);
+        }
+      }
+
       if (user?.uid) {
         // User is logged in - load from database only
         const cloudModuleIds = await loadFromCloud();
@@ -153,17 +170,33 @@ export default function DashboardPage() {
           if (freshModules.length > 0) {
             setModules(freshModules);
             saveModulesToLocal(freshModules);
+            sessionStorage.setItem(
+              dashboardCacheKey,
+              JSON.stringify({ modules: freshModules } satisfies DashboardCachePayload)
+            );
           } else {
             setModules([]);
+            sessionStorage.setItem(
+              dashboardCacheKey,
+              JSON.stringify({ modules: [] } satisfies DashboardCachePayload)
+            );
           }
         } else {
           // No modules in database for this user
           setModules([]);
+          sessionStorage.setItem(
+            dashboardCacheKey,
+            JSON.stringify({ modules: [] } satisfies DashboardCachePayload)
+          );
         }
       } else {
         // Not logged in - use local storage only
         const localModules = loadModulesFromLocal();
         setModules(localModules);
+        sessionStorage.setItem(
+          dashboardCacheKey,
+          JSON.stringify({ modules: localModules } satisfies DashboardCachePayload)
+        );
         if (localModules.length > 0) {
           refreshModuleCounts(localModules);
         }
@@ -171,7 +204,7 @@ export default function DashboardPage() {
     };
 
     initializeModules();
-  }, [user, authLoading, loadFromCloud, loadModulesFromLocal, fetchModuleDetails, saveModulesToLocal]);
+  }, [user, authLoading, loadFromCloud, loadModulesFromLocal, fetchModuleDetails, saveModulesToLocal, dashboardCacheKey]);
 
   // Listen for updates from HeaderSearch
   useEffect(() => {
@@ -180,6 +213,10 @@ export default function DashboardPage() {
     const handleUpdate = async () => {
       const parsed = loadModulesFromLocal();
       setModules(parsed);
+      sessionStorage.setItem(
+        dashboardCacheKey,
+        JSON.stringify({ modules: parsed } satisfies DashboardCachePayload)
+      );
       
       // Sync to cloud if logged in
       if (user?.uid && parsed.length > 0) {
@@ -192,7 +229,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener("dashboardModulesUpdated", handleUpdate);
     };
-  }, [user?.uid, loadModulesFromLocal, syncToCloud]);
+  }, [user?.uid, loadModulesFromLocal, syncToCloud, dashboardCacheKey]);
 
   // Fetch fresh video counts for dashboard modules
   const refreshModuleCounts = async (currentModules: ModuleData[]) => {
@@ -212,6 +249,10 @@ export default function DashboardPage() {
 
       setModules(updated);
       saveModulesToLocal(updated);
+      sessionStorage.setItem(
+        dashboardCacheKey,
+        JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
+      );
     } catch (err) {
       console.error("Failed to refresh module counts", err);
     }
@@ -228,6 +269,10 @@ export default function DashboardPage() {
     const updated = modules.filter((m) => m.module_id !== moduleId);
     setModules(updated);
     saveModulesToLocal(updated);
+    sessionStorage.setItem(
+      dashboardCacheKey,
+      JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
+    );
     
     // Sync to cloud if logged in
     if (user?.uid) {
@@ -277,6 +322,10 @@ export default function DashboardPage() {
     const updated = [...currentModules, newModule];
     setModules(updated);
     saveModulesToLocal(updated);
+    sessionStorage.setItem(
+      dashboardCacheKey,
+      JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
+    );
 
     // Sync to cloud if logged in
     if (user?.uid) {
@@ -298,39 +347,40 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen py-6 sm:py-12 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto">
-        {/* Mobile-optimized header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-4xl font-bold mb-1">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Dashboard</span>
-            </h1>
-            <p className="text-sm sm:text-lg text-gray-700">Modules you've added to your dashboard</p>
-          </div>
-          <div className="flex items-center gap-2 sm:space-x-3 flex-wrap sm:flex-nowrap">
-            <button
-              onClick={() => setSelectorOpen(true)}
-              className="px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 flex items-center space-x-1 sm:space-x-2"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span className="hidden xs:inline">Add Modules</span>
-              <span className="xs:hidden">Add</span>
-            </button>
-            <HeaderSearch />
-            {modules.length > 0 && (
+        <div className="mb-6 space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-4xl font-bold mb-1">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Dashboard</span>
+              </h1>
+             
+            </div>
+            <div className="flex items-center justify-end gap-2 sm:gap-3">
               <button
-                onClick={toggleEditMode}
-                className={`px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
-                  editMode
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
-                }`}
+                onClick={() => setSelectorOpen(true)}
+                className="px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 flex items-center space-x-1 sm:space-x-2"
               >
-                {editMode ? 'Done' : 'Edit'}
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                <span className="hidden xs:inline">Add Modules</span>
+                <span className="xs:hidden">Add</span>
               </button>
-            )}
+              {modules.length > 0 && (
+                <button
+                  onClick={toggleEditMode}
+                  className={`px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
+                    editMode
+                      ? 'bg-green-600 text-white hover:bg-green-700'
+                      : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  {editMode ? 'Done' : 'Edit'}
+                </button>
+              )}
+            </div>
           </div>
+
         </div>
 
         {modules.length === 0 ? (

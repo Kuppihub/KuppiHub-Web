@@ -124,11 +124,11 @@ export default function HeaderSearch() {
       {/* Search button (both desktop and mobile) */}
       <button
         onClick={() => setSearchOpen(true)}
-        className="relative flex items-center gap-2 px-3 py-2 rounded-2xl bg-white hover:bg-gray-50 text-gray-800 shadow "
+        className="w-full relative flex items-center gap-2 px-4 py-2.5 rounded-full bg-white/95 hover:bg-white text-gray-700 border border-blue-200 shadow-sm"
       >
         <Search className="w-5 h-5" /> 
-        <span className="hidden md:block">Search modules...</span>
-        <span className="md:hidden">Search...</span>
+        <span className="hidden md:block text-sm">Search modules by code or name...</span>
+        <span className="md:hidden text-sm">Search...</span>
       </button>
 
       {/* Full-page search overlay */}

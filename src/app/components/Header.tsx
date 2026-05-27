@@ -23,7 +23,7 @@ export default function Header() {
   return (
     <header className="bg-gradient-to-r from-blue-100 via-purple-200 to-blue-500 text-white">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
+        <div className="flex items-center h-16 gap-4">
           {/* Logo */}
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2 group">
@@ -46,8 +46,13 @@ export default function Header() {
             </Link>
           </div>
 
-          {/* Desktop Nav */}
-          <div className="hidden sm:flex items-center space-x-6">
+          <div className="hidden sm:flex flex-1 justify-center px-2">
+            <div className="w-full max-w-2xl">
+              <HeaderSearch />
+            </div>
+          </div>
+
+          <div className="hidden sm:flex items-center ml-auto space-x-3">
             <Link 
               href="/dashboard"
               className="px-5 py-2 rounded-full font-bold text-blue-800 bg-white border border-blue-300 shadow-sm 
@@ -72,19 +77,7 @@ export default function Header() {
             >
               Add Kuppi
             </Link>
-          </div>
 
-          {/* Placeholder for search (can be added later) */}
-         
-       
-             
-              <HeaderSearch />
-             
-           
-            {/* Search component will be added here later */}
-         
-          {/* Auth Button */}
-          <div className="hidden sm:flex items-center ml-4">
             {loading ? (
               <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse"></div>
             ) : user ? (
@@ -182,6 +175,11 @@ export default function Header() {
               />
             </svg>
           </button>
+        </div>
+
+        {/* Mobile top search bar */}
+        <div className="sm:hidden pb-3">
+          <HeaderSearch />
         </div>
 
         {/* Mobile Menu */}

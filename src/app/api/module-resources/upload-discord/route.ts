@@ -5,7 +5,7 @@ import { authenticateRequest } from "@/lib/firebase-admin";
 export const runtime = "nodejs";
 
 const ALLOWED_DOMAIN_OPTIONS = ["@uom.lk", "@cse.mrt.ac.lk", "@gmail.com"] as const;
-const DEFAULT_MAX_BYTES = 25 * 1024 * 1024;
+const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
 
 function parseBoolean(value: FormDataEntryValue | null, defaultValue: boolean) {
   if (typeof value !== "string") return defaultValue;
@@ -71,6 +71,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const isPdf =
+      file.type === "application/pdf" ||
+      file.name.toLowerCase().endsWith(".pdf");
+    if (!isPdf) {
+      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
+    }
+
     let validatedDomains: string[] | null = null;
     const allowedDomainsRaw = formData.getAll("allowed_domains");
     if (allowedDomainsRaw.length > 0) {
@@ -81,14 +88,6 @@ export async function POST(req: NextRequest) {
 
       validatedDomains = filtered.length > 0 ? filtered : null;
     }
-
-    const { data: userData } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", user.uid)
-      .single();
-
-    const uploaderId = userData?.id ?? null;
 
     const discordBody = new FormData();
     discordBody.append("file", file, file.name);
@@ -140,7 +139,7 @@ export async function POST(req: NextRequest) {
         storage_key: String(attachment.id || discordJson.id || ""),
         is_public: isPublic,
         allowed_domains: validatedDomains,
-        uploaded_by_user_id: uploaderId,
+        uploaded_by_user_id: null,
         is_approved: false,
       })
       .select("id,title,file_url,is_approved,module_id,category_id,folder_id,created_at")

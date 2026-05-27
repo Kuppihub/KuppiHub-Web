@@ -88,13 +88,7 @@ export default function VideoCard({ video, moduleId, isActive, onToggle }: Video
 
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 50 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.3 }}
-      transition={{ duration: 0.6 }}
-      className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl h-fit"
-    >
+    <div className="bg-white rounded-2xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:shadow-xl h-fit">
       <button
         onClick={() => onToggle(video.id)}
         className="w-full text-left p-6 flex justify-between items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
@@ -118,7 +112,7 @@ export default function VideoCard({ video, moduleId, isActive, onToggle }: Video
           <VideoCardContent video={video} moduleId={moduleId} />
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   );
 }
 

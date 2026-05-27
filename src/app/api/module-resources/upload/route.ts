@@ -3,6 +3,7 @@ import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 
 const ALLOWED_DOMAIN_OPTIONS = ["@uom.lk", "@cse.mrt.ac.lk", "@gmail.com"] as const;
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   try {
@@ -23,9 +24,22 @@ export async function POST(req: NextRequest) {
     const storageProvider = typeof body?.storage_provider === "string" ? body.storage_provider.trim() : "discord";
     const storageKey = typeof body?.storage_key === "string" ? body.storage_key.trim() : null;
     const isPublic = body?.is_public !== false;
+    const fileName = typeof body?.file_name === "string" ? body.file_name.trim() : "";
 
     if (!moduleId || !categoryId || !title || !fileUrl) {
       return NextResponse.json({ error: "module_id, category_id, title and file_url are required" }, { status: 400 });
+    }
+
+    if (!fileType || fileType !== "application/pdf") {
+      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
+    }
+
+    if (typeof fileSizeBytes !== "number" || fileSizeBytes <= 0 || fileSizeBytes > MAX_FILE_BYTES) {
+      return NextResponse.json({ error: "PDF must be 10 MB or smaller" }, { status: 400 });
+    }
+
+    if (fileName && !fileName.toLowerCase().endsWith(".pdf")) {
+      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
     }
 
     let validatedDomains: string[] | null = null;
@@ -35,14 +49,6 @@ export async function POST(req: NextRequest) {
       );
       validatedDomains = filteredDomains.length > 0 ? filteredDomains : null;
     }
-
-    const { data: userData } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", user.uid)
-      .single();
-
-    const uploadedBy = userData?.id ?? null;
 
     const { data, error } = await supabaseAdmin
       .from("resources")
@@ -59,7 +65,7 @@ export async function POST(req: NextRequest) {
         storage_key: storageKey,
         is_public: isPublic,
         allowed_domains: validatedDomains,
-        uploaded_by_user_id: uploadedBy,
+        uploaded_by_user_id: null,
         is_approved: false,
       })
       .select("id,title,file_url,category_id,folder_id,module_id,created_at")

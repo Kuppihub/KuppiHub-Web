@@ -17,6 +17,10 @@ import {
   Link,
   MenuItem,
   Paper,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
   Select,
   Stack,
   TextField,
@@ -62,6 +66,13 @@ type ResourceCacheEntry = {
   resources: ResourceItem[];
 };
 
+type PersistedModuleCache = {
+  videos: Video[] | null;
+  resourcesMap: Array<[string, ResourceCacheEntry]>;
+  didLoadCategories: boolean;
+  categories: ResourceCategory[];
+};
+
 export default function ModuleKuppiPage() {
   const [videos, setVideos] = useState<Video[]>([]);
   const [videosLoading, setVideosLoading] = useState(false);
@@ -83,18 +94,69 @@ export default function ModuleKuppiPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const [activeDirectory, setActiveDirectory] = useState<'root' | 'kuppi' | 'resource'>('root');
   const [didLoadCategories, setDidLoadCategories] = useState(false);
 
   const videosCacheRef = useRef<Video[] | null>(null);
   const resourcesCacheRef = useRef<Map<string, ResourceCacheEntry>>(new Map());
+  const entryPathRef = useRef<string>('/modules');
 
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const moduleId = params.moduleId as string;
   const { user } = useAuth();
+  const storageKey = `module-kuppi-cache:${moduleId}:${user?.uid ?? 'guest'}`;
+
+  useEffect(() => {
+    if (!moduleId || typeof window === 'undefined') return;
+    const raw = window.sessionStorage.getItem(storageKey);
+    if (!raw) return;
+
+    try {
+      const parsed = JSON.parse(raw) as PersistedModuleCache;
+      videosCacheRef.current = parsed.videos || null;
+      resourcesCacheRef.current = new Map(parsed.resourcesMap || []);
+      if (parsed.videos) setVideos(parsed.videos);
+      if (parsed.categories?.length) setCategories(parsed.categories);
+      if (parsed.didLoadCategories) {
+        setDidLoadCategories(true);
+        setResourcesLoading(false);
+      }
+    } catch {
+      window.sessionStorage.removeItem(storageKey);
+    }
+  }, [storageKey, moduleId]);
+
+  useEffect(() => {
+    if (!moduleId || typeof window === 'undefined') return;
+    const payload: PersistedModuleCache = {
+      videos: videosCacheRef.current,
+      resourcesMap: Array.from(resourcesCacheRef.current.entries()),
+      didLoadCategories,
+      categories,
+    };
+    window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
+  }, [storageKey, moduleId, didLoadCategories, categories, videos, folders, resources]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const ref = document.referrer;
+    if (!ref) return;
+
+    try {
+      const refUrl = new URL(ref);
+      const sameOrigin = refUrl.origin === window.location.origin;
+      const isSamePage = refUrl.pathname === window.location.pathname;
+      if (sameOrigin && !isSamePage) {
+        entryPathRef.current = `${refUrl.pathname}${refUrl.search}`;
+      }
+    } catch {
+      entryPathRef.current = '/modules';
+    }
+  }, []);
 
   const syncExplorerUrl = useCallback(
     (next: { view: 'root' | 'kuppi' | 'resource'; categoryId?: number | null; folderId?: number | null }) => {
@@ -232,7 +294,7 @@ export default function ModuleKuppiPage() {
     setFolderTrail([]);
   }, [searchParams, didLoadCategories]);
 
-  const handleBack = () => router.back();
+  const handleBack = () => router.push(entryPathRef.current);
   const handleToggleVideo = (id: number) => {
     setOpenVideoIds((prev) => (
       prev.includes(id) ? prev.filter((videoId) => videoId !== id) : [...prev, id]
@@ -345,6 +407,7 @@ export default function ModuleKuppiPage() {
       setUploadTitle('');
       setUploadDescription('');
       setUploadFile(null);
+      setUploadDialogOpen(false);
       setUploadMessage(data?.message || 'Uploaded successfully.');
       resourcesCacheRef.current.clear();
       await fetchResources();
@@ -354,6 +417,41 @@ export default function ModuleKuppiPage() {
       setUploading(false);
     }
   };
+
+  const getActiveCategoryName = () => (
+    categories.find((c) => c.id === activeCategoryId)?.name || 'Resource'
+  );
+
+  const getAddButtonLabel = () => {
+    const name = getActiveCategoryName();
+    if (name.toLowerCase().includes('past paper answers')) return 'Add Past Paper Answer';
+    if (name.toLowerCase().includes('past papers')) return 'Add Past Paper';
+    if (name.toLowerCase().includes('lecture')) return 'Add Lecture Slide';
+    if (name.toLowerCase().includes('short notes')) return 'Add Short Note';
+    return `Add ${name}`;
+  };
+
+  const getCategoryNotice = () => {
+    const name = getActiveCategoryName().toLowerCase();
+    if (name.includes('lecture')) {
+      return {
+        severity: 'warning' as const,
+        text: 'Please share lecture slides only with lecturer approval.',
+      };
+    }
+    if (name.includes('past paper')) {
+      return {
+        severity: 'info' as const,
+        text: 'Upload only materials that are allowed to be shared publicly for student learning.',
+      };
+    }
+    return {
+      severity: 'info' as const,
+      text: 'Please upload only content you are permitted to share publicly.',
+    };
+  };
+
+  const orderedCategories = [...categories].sort((a, b) => a.sort_order - b.sort_order);
 
   if (!didLoadCategories && resourcesLoading) {
     return (
@@ -378,14 +476,32 @@ export default function ModuleKuppiPage() {
     <Box className="min-h-screen py-12 px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <Box className="max-w-7xl mx-auto space-y-8">
         <BackButton onClick={handleBack} className="mb-2" />
-        <PageHeader title="Module Content" subtitle="Open a directory to view kuppi videos or study resources" />
+        <PageHeader title="Module Content" />
 
         <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dbeafe', background: 'rgba(255,255,255,0.9)' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Typography variant="h6" fontWeight={700}>Directory</Typography>
-            {activeDirectory !== 'root' && (
-              <Button variant="outlined" onClick={goToRoot}>Back To Root</Button>
-            )}
+            {activeDirectory === 'kuppi' ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button variant="outlined" onClick={goToRoot}>Back To Root</Button>
+                <Button variant="contained" onClick={() => router.push('/add-kuppi')}>
+                  Add Kuppi
+                </Button>
+              </Stack>
+            ) : activeDirectory === 'resource' ? (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Button variant="outlined" onClick={goToRoot}>Back To Root</Button>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    setUploadCategoryId(activeCategoryId);
+                    setUploadDialogOpen(true);
+                  }}
+                >
+                  {getAddButtonLabel()}
+                </Button>
+              </Stack>
+            ) : null}
           </Stack>
 
           <Breadcrumbs sx={{ mb: 3 }}>
@@ -431,7 +547,7 @@ export default function ModuleKuppiPage() {
                 </Card>
               </Grid>
 
-              {categories.map((category) => (
+              {orderedCategories.map((category) => (
                 <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
                   <Card variant="outlined">
                     <CardActionArea onClick={() => enterResourceCategory(category.id)}>
@@ -453,7 +569,6 @@ export default function ModuleKuppiPage() {
 
           {activeDirectory === 'kuppi' ? (
             <Stack spacing={2}>
-              <Alert severity="info">All Kuppi cards start collapsed. Open only what you need.</Alert>
               {videosLoading ? (
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <CircularProgress size={20} />
@@ -491,64 +606,9 @@ export default function ModuleKuppiPage() {
 
           {activeDirectory === 'resource' ? (
             <Stack spacing={2}>
-              <Alert severity="info">Uploaded files are visible to others only after admin approval.</Alert>
-
-              <Box component="form" onSubmit={handleUpload}>
-                <Grid container spacing={2}>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <TextField
-                      fullWidth
-                      label="Title"
-                      placeholder="e.g., Past Paper 2024"
-                      value={uploadTitle}
-                      onChange={(e) => setUploadTitle(e.target.value)}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12, md: 6 }}>
-                    <FormControl fullWidth>
-                      <InputLabel id="upload-category-label">Category</InputLabel>
-                      <Select
-                        labelId="upload-category-label"
-                        label="Category"
-                        value={uploadCategoryId ?? ''}
-                        onChange={(e) => {
-                          const nextId = e.target.value ? Number(e.target.value) : null;
-                          setUploadCategoryId(nextId);
-                          if (nextId) enterResourceCategory(nextId);
-                        }}
-                      >
-                        {categories.map((category) => (
-                          <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>
-                        ))}
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <TextField
-                      fullWidth
-                      label="Description"
-                      placeholder="Optional"
-                      value={uploadDescription}
-                      onChange={(e) => setUploadDescription(e.target.value)}
-                    />
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <Button variant="outlined" component="label" fullWidth>
-                      {uploadFile ? `Selected: ${uploadFile.name}` : 'Choose File'}
-                      <input
-                        type="file"
-                        hidden
-                        onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                      />
-                    </Button>
-                  </Grid>
-                  <Grid size={{ xs: 12 }}>
-                    <Button type="submit" variant="contained" disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload Resource'}
-                    </Button>
-                  </Grid>
-                </Grid>
-              </Box>
+              <Alert severity={getCategoryNotice().severity}>
+                {getCategoryNotice().text}
+              </Alert>
 
               {uploadMessage ? <Alert severity="success">{uploadMessage}</Alert> : null}
               {uploadError ? <Alert severity="error">{uploadError}</Alert> : null}
@@ -597,6 +657,59 @@ export default function ModuleKuppiPage() {
                   </Card>
                 ))}
               </Stack>
+
+              <Dialog
+                open={uploadDialogOpen}
+                onClose={() => (uploading ? null : setUploadDialogOpen(false))}
+                fullWidth
+                maxWidth="sm"
+              >
+                <DialogTitle>{getAddButtonLabel()}</DialogTitle>
+                <Box component="form" onSubmit={handleUpload}>
+                  <DialogContent>
+                    <Stack spacing={2}>
+                      <TextField
+                        fullWidth
+                        label="Category"
+                        value={getActiveCategoryName()}
+                        InputProps={{ readOnly: true }}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Title"
+                        placeholder="Enter title"
+                        value={uploadTitle}
+                        onChange={(e) => setUploadTitle(e.target.value)}
+                      />
+                      <TextField
+                        fullWidth
+                        label="Description"
+                        placeholder="Optional"
+                        value={uploadDescription}
+                        onChange={(e) => setUploadDescription(e.target.value)}
+                      />
+                      <Button variant="outlined" component="label" fullWidth>
+                        {uploadFile ? `Selected: ${uploadFile.name}` : 'Choose File'}
+                        <input
+                          type="file"
+                          accept="application/pdf,.pdf"
+                          hidden
+                          onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                        />
+                      </Button>
+                      <Typography variant="caption" color="text.secondary">
+                        PDF only, max 10 MB
+                      </Typography>
+                    </Stack>
+                  </DialogContent>
+                  <DialogActions sx={{ px: 3, pb: 2 }}>
+                    <Button onClick={() => setUploadDialogOpen(false)} disabled={uploading}>Cancel</Button>
+                    <Button type="submit" variant="contained" disabled={uploading}>
+                      {uploading ? 'Uploading...' : 'Upload'}
+                    </Button>
+                  </DialogActions>
+                </Box>
+              </Dialog>
             </Stack>
           ) : null}
         </Paper>
