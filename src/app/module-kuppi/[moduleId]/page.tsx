@@ -478,24 +478,121 @@ export default function ModuleKuppiPage() {
         <BackButton onClick={handleBack} className="mb-2" />
         <PageHeader title="Module Content" subtitle="Open a directory to view kuppi videos or study resources" />
 
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dbeafe', background: 'rgba(255,255,255,0.9)' }}>
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px solid rgba(255, 255, 255, 0.4)', background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.15))', backdropFilter: 'blur(20px) saturate(160%)', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
             <Typography variant="h6" fontWeight={700}>Directory</Typography>
             {activeDirectory === 'kuppi' ? (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button variant="outlined" onClick={goToRoot}>Back To Root</Button>
-                <Button variant="contained" onClick={() => router.push('/add-kuppi')}>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Button
+                  variant="outlined"
+                  onClick={goToRoot}
+                  sx={{
+                    borderRadius: 999,
+                    px: 3,
+                    py: 1,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    background: "rgba(255, 255, 255, 0.15)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255, 255, 255, 0.35)",
+                    boxShadow: "0 4px 16px rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                    color: "#1e3a8a",
+                    transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                    "&:hover": {
+                      background: "rgba(255, 255, 255, 0.3)",
+                      border: "1px solid rgba(255, 255, 255, 0.55)",
+                      boxShadow: "0 8px 24px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.35)",
+                      transform: "scale(1.04) translateY(-1px)",
+                    },
+                    "&:active": {
+                      transform: "scale(0.96)",
+                    }
+                  }}
+                >
+                  Back To Root
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => router.push('/add-kuppi')}
+                  sx={{
+                    borderRadius: 999,
+                    px: 3,
+                    py: 1,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    boxShadow: "0 8px 24px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
+                    transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
+                      boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                      transform: "scale(1.04) translateY(-1px)",
+                    },
+                    "&:active": {
+                      transform: "scale(0.96)",
+                    }
+                  }}
+                >
                   Add Kuppi
                 </Button>
               </Stack>
             ) : activeDirectory === 'resource' ? (
-              <Stack direction="row" spacing={1} alignItems="center">
-                <Button variant="outlined" onClick={goToRoot}>Back To Root</Button>
+              <Stack direction="row" spacing={1.5} alignItems="center">
+                <Button
+                  variant="outlined"
+                  onClick={goToRoot}
+                  sx={{
+                    borderRadius: 999,
+                    px: 3,
+                    py: 1,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    background: "rgba(255, 255, 255, 0.15)",
+                    backdropFilter: "blur(10px)",
+                    border: "1px solid rgba(255, 255, 255, 0.35)",
+                    boxShadow: "0 4px 16px rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                    color: "#1e3a8a",
+                    transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                    "&:hover": {
+                      background: "rgba(255, 255, 255, 0.3)",
+                      border: "1px solid rgba(255, 255, 255, 0.55)",
+                      boxShadow: "0 8px 24px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.35)",
+                      transform: "scale(1.04) translateY(-1px)",
+                    },
+                    "&:active": {
+                      transform: "scale(0.96)",
+                    }
+                  }}
+                >
+                  Back To Root
+                </Button>
                 <Button
                   variant="contained"
                   onClick={() => {
                     setUploadCategoryId(activeCategoryId);
                     setUploadDialogOpen(true);
+                  }}
+                  sx={{
+                    borderRadius: 999,
+                    px: 3,
+                    py: 1,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
+                    backdropFilter: "blur(8px)",
+                    border: "1px solid rgba(255, 255, 255, 0.3)",
+                    boxShadow: "0 8px 24px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
+                    transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
+                      boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                      transform: "scale(1.04) translateY(-1px)",
+                    },
+                    "&:active": {
+                      transform: "scale(0.96)",
+                    }
                   }}
                 >
                   {getAddButtonLabel()}
@@ -527,7 +624,23 @@ export default function ModuleKuppiPage() {
           {activeDirectory === 'root' ? (
             <Grid container spacing={2}>
               <Grid size={{ xs: 12, sm: 6, md: 4 }}>
-                <Card variant="outlined">
+                <Card
+                  variant="outlined"
+                  sx={{
+                    borderRadius: 3,
+                    border: "1px solid rgba(255, 255, 255, 0.35)",
+                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
+                    backdropFilter: "blur(20px)",
+                    boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                    transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                    "&:hover": {
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
+                      borderColor: "rgba(255, 255, 255, 0.5)",
+                      boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
                   <CardActionArea onClick={async () => {
                     setActiveDirectory('kuppi');
                     setOpenVideoIds([]);
@@ -549,7 +662,23 @@ export default function ModuleKuppiPage() {
 
               {orderedCategories.map((category) => (
                 <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
-                  <Card variant="outlined">
+                  <Card
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 3,
+                      border: "1px solid rgba(255, 255, 255, 0.35)",
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
+                        borderColor: "rgba(255, 255, 255, 0.5)",
+                        boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                  >
                     <CardActionArea onClick={() => enterResourceCategory(category.id)}>
                       <CardContent>
                         <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
@@ -579,7 +708,18 @@ export default function ModuleKuppiPage() {
               ) : (
                 <Stack spacing={4}>
                   {sortedYears.map((year) => (
-                    <Paper key={year} variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                    <Paper
+                      key={year}
+                      variant="outlined"
+                      sx={{
+                        p: 2.5,
+                        borderRadius: 3,
+                        border: "1px solid rgba(255, 255, 255, 0.35)",
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1))",
+                        backdropFilter: "blur(15px)",
+                        boxShadow: "0 4px 16px rgba(31, 38, 135, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.2)",
+                      }}
+                    >
                       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
                         <Typography variant="subtitle1" fontWeight={700}>{year}</Typography>
                         <Typography variant="caption" color="text.secondary">
@@ -626,7 +766,24 @@ export default function ModuleKuppiPage() {
 
               <Stack spacing={1.5}>
                 {folders.map((folder) => (
-                  <Card key={folder.id} variant="outlined">
+                  <Card
+                    key={folder.id}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 3,
+                      border: "1px solid rgba(255, 255, 255, 0.35)",
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
+                        borderColor: "rgba(255, 255, 255, 0.5)",
+                        boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                  >
                     <CardActionArea onClick={() => openFolder(folder)}>
                       <CardContent>
                         <Stack direction="row" spacing={1.5} alignItems="center">
@@ -639,7 +796,24 @@ export default function ModuleKuppiPage() {
                 ))}
 
                 {resources.map((resource) => (
-                  <Card key={resource.id} variant="outlined">
+                  <Card
+                    key={resource.id}
+                    variant="outlined"
+                    sx={{
+                      borderRadius: 3,
+                      border: "1px solid rgba(255, 255, 255, 0.35)",
+                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
+                      backdropFilter: "blur(20px)",
+                      boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                      transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                      "&:hover": {
+                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
+                        borderColor: "rgba(255, 255, 255, 0.5)",
+                        boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+                        transform: "translateY(-2px)",
+                      },
+                    }}
+                  >
                     <CardActionArea component="a" href={resource.file_url} target="_blank" rel="noreferrer">
                       <CardContent>
                         <Stack direction="row" spacing={1.5} alignItems="flex-start">

@@ -69,7 +69,7 @@ export default function StudentsPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, amount: 0.2 }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
-              className="bg-white rounded-xl shadow-sm overflow-hidden hover:shadow-md transition duration-300"
+              className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl shadow-sm overflow-hidden hover:bg-white/25 hover:shadow-md transition duration-300 saturate-150"
             >
               <div className="relative aspect-square w-full overflow-hidden">
 <Image
@@ -111,7 +111,7 @@ export default function StudentsPage() {
                       href={student.linkedin_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-block bg-blue-600 text-white px-3 py-1 rounded-full text-xs hover:bg-blue-700 transition"
+                      className="inline-block bg-blue-500/20 backdrop-blur-md border border-white/20 text-blue-950 px-4 py-1.5 rounded-full text-xs font-bold hover:bg-blue-500/30 transition-all duration-300 active:scale-95 shadow-sm"
                     >
                       LinkedIn
                     </a>

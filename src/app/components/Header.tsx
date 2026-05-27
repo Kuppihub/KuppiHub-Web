@@ -21,7 +21,7 @@ export default function Header() {
   );
 
   return (
-    <header className="bg-gradient-to-r from-blue-100 via-purple-200 to-blue-500 text-white">
+    <header className="bg-white/15 backdrop-blur-xl border-b border-white/25 text-white sticky top-0 z-50 shadow-sm saturate-150">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-16 gap-4">
           {/* Logo */}
@@ -55,25 +55,25 @@ export default function Header() {
           <div className="hidden sm:flex items-center ml-auto space-x-3">
             <Link 
               href="/dashboard"
-              className="px-5 py-2 rounded-full font-bold text-blue-800 bg-white border border-blue-300 shadow-sm 
-                         hover:bg-blue-700 hover:text-white hover:shadow-md hover:border-blue-700
-                         transition-all duration-500 ease-in-out transform hover:scale-105"
+              className="px-5 py-2.5 rounded-full font-bold text-blue-900 bg-white/20 border border-white/35 shadow-sm 
+                         hover:bg-white/30 hover:text-blue-950 hover:shadow-md hover:border-white/50 hover:scale-105 active:scale-95
+                         transition-all duration-300 ease-in-out flex items-center justify-center backdrop-blur-md"
             >
               Dashboard
             </Link>
             <Link 
               href="/tutors"
-              className="px-5 py-2 rounded-full font-bold text-blue-800 bg-white border border-blue-300 shadow-sm 
-                         hover:bg-blue-700 hover:text-white hover:shadow-md hover:border-blue-700
-                         transition-all duration-500 ease-in-out transform hover:scale-105"
+              className="px-5 py-2.5 rounded-full font-bold text-blue-900 bg-white/20 border border-white/35 shadow-sm 
+                         hover:bg-white/30 hover:text-blue-950 hover:shadow-md hover:border-white/50 hover:scale-105 active:scale-95
+                         transition-all duration-300 ease-in-out flex items-center justify-center backdrop-blur-md"
             >
               Tutors
             </Link>
             <Link 
               href="/add-kuppi" 
-              className="px-5 py-2 rounded-full font-bold text-blue-800 bg-white border border-blue-300 shadow-sm 
-                         hover:bg-blue-700 hover:text-white hover:shadow-md hover:border-blue-700
-                         transition-all duration-500 ease-in-out transform hover:scale-105"
+              className="px-5 py-2.5 rounded-full font-bold text-blue-900 bg-white/20 border border-white/35 shadow-sm 
+                         hover:bg-white/30 hover:text-blue-950 hover:shadow-md hover:border-white/50 hover:scale-105 active:scale-95
+                         transition-all duration-300 ease-in-out flex items-center justify-center backdrop-blur-md"
             >
               Add Kuppi
             </Link>
@@ -149,9 +149,9 @@ export default function Header() {
             ) : (
               <Link
                 href="/login"
-                className="px-4 py-2 rounded-full font-bold text-green-700 bg-white border border-green-300 shadow-sm 
-                           hover:bg-green-600 hover:text-white hover:shadow-md hover:border-green-600
-                           transition-all duration-500 ease-in-out transform hover:scale-105 flex items-center space-x-2 text-sm"
+                className="px-4 py-2.5 rounded-full font-bold text-emerald-900 bg-white/20 border border-white/35 shadow-sm 
+                           hover:bg-white/30 hover:text-emerald-950 hover:shadow-md hover:border-white/50 hover:scale-105 active:scale-95
+                           transition-all duration-300 ease-in-out flex items-center space-x-2 text-sm backdrop-blur-md"
               >
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
