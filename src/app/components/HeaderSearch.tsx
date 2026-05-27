@@ -176,10 +176,10 @@ export default function HeaderSearch() {
           </button>
 
           {/* Top search bar container - clicking inside shouldn't close search */}
-          <div className="w-full max-w-4xl mx-auto mt-6 sm:mt-20 px-4" onClick={(e) => e.stopPropagation()}>
-            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl p-3 sm:p-5 flex items-center gap-3 sm:gap-4 shadow-2xl">
+          <div className="w-full max-w-2xl mx-auto mt-10 sm:mt-24 px-4" onClick={(e) => e.stopPropagation()}>
+            <div className="bg-white/10 backdrop-blur-md border border-white/20 rounded-xl p-2 sm:p-3 flex items-center gap-2 sm:gap-3 shadow-2xl">
               {/* Search Icon */}
-              <Search className="w-6 h-6 sm:w-8 h-8 text-white/80 ml-1.5 sm:ml-2 flex-shrink-0" />
+              <Search className="w-5 h-5 sm:w-6 h-6 text-white/80 ml-1.5 sm:ml-2 flex-shrink-0" />
 
               {/* Input field */}
               <input
@@ -188,7 +188,7 @@ export default function HeaderSearch() {
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Search modules..."
                 autoFocus
-                className="flex-1 px-3 py-2.5 sm:px-6 sm:py-4.5 bg-white/5 border border-white/15 rounded-xl text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white/10 transition-all duration-300 text-base sm:text-2xl md:text-3xl font-semibold sm:font-bold"
+                className="flex-1 px-3 py-2 sm:px-4 sm:py-3 bg-white/5 border border-white/15 rounded-lg text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:bg-white/10 transition-all duration-300 text-sm sm:text-base font-medium"
               />
 
               {/* Inline close button on mobile, hidden on desktop */}
@@ -197,7 +197,7 @@ export default function HeaderSearch() {
                   setSearchOpen(false);
                   setQuery("");
                 }}
-                className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 cursor-pointer flex items-center justify-center"
+                className="md:hidden p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white/80 hover:text-white border border-white/15 cursor-pointer flex items-center justify-center"
                 aria-label="Close search"
               >
                 <X className="w-5 h-5" />
@@ -214,35 +214,35 @@ export default function HeaderSearch() {
             className="flex-1 overflow-y-auto w-full max-w-7xl mx-auto px-4 py-3 sm:py-8 mt-2 sm:mt-6"
           >
             {query.length < 2 ? (
-              <div className="max-w-xl mx-auto p-4 sm:p-8 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-center backdrop-blur-md shadow-lg mt-4 sm:mt-12" onClick={(e) => e.stopPropagation()}>
-                <p className="text-sm sm:text-lg text-white/95 font-semibold">Type at least 2 characters to search modules...</p>
+              <div className="max-w-md mx-auto p-3 sm:p-4 bg-white/5 border border-white/10 rounded-xl text-center backdrop-blur-md shadow-md mt-4 sm:mt-8" onClick={(e) => e.stopPropagation()}>
+                <p className="text-xs sm:text-sm text-white/90 font-medium">Type at least 2 characters to search modules...</p>
               </div>
             ) : loading ? (
-              <div className="max-w-xl mx-auto p-4 sm:p-8 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-center backdrop-blur-md shadow-lg mt-4 sm:mt-12 flex items-center justify-center gap-3 sm:gap-4" onClick={(e) => e.stopPropagation()}>
-                <div className="animate-spin rounded-full h-5 w-5 sm:h-6 sm:w-6 border-b-2 border-white"></div>
-                <p className="text-sm sm:text-lg text-white/95 font-semibold">Searching modules...</p>
+              <div className="max-w-md mx-auto p-3 sm:p-4 bg-white/5 border border-white/10 rounded-xl text-center backdrop-blur-md shadow-md mt-4 sm:mt-8 flex items-center justify-center gap-2" onClick={(e) => e.stopPropagation()}>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                <p className="text-xs sm:text-sm text-white/90 font-medium">Searching modules...</p>
               </div>
             ) : results.length === 0 ? (
-              <div className="max-w-xl mx-auto p-4 sm:p-8 bg-white/5 border border-white/10 rounded-xl sm:rounded-2xl text-center backdrop-blur-md shadow-lg mt-4 sm:mt-12" onClick={(e) => e.stopPropagation()}>
-                <p className="text-sm sm:text-lg text-white/95 font-semibold">No modules found</p>
+              <div className="max-w-md mx-auto p-3 sm:p-4 bg-white/5 border border-white/10 rounded-xl text-center backdrop-blur-md shadow-md mt-4 sm:mt-8" onClick={(e) => e.stopPropagation()}>
+                <p className="text-xs sm:text-sm text-white/90 font-medium">No modules found</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-6" onClick={(e) => e.stopPropagation()}>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" onClick={(e) => e.stopPropagation()}>
                 {results.map((mod: Module) => (
                   <div 
                     key={mod.id} 
-                    className="p-4 sm:p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl sm:rounded-2xl shadow-md sm:shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] sm:hover:scale-[1.02] flex flex-col justify-between h-full saturate-150"
+                    className="p-3.5 sm:p-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-md sm:shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between h-full saturate-150"
                   >
                     <div>
-                      <p className="font-bold text-blue-300 text-xs sm:text-base tracking-wider uppercase">{mod.code}</p>
-                      <p className="font-bold text-white mt-1.5 sm:mt-2 text-base sm:text-lg line-clamp-2 leading-snug">{mod.name}</p>
+                      <p className="font-bold text-blue-300 text-xs sm:text-sm tracking-wider uppercase">{mod.code}</p>
+                      <p className="font-bold text-white mt-1 sm:mt-1.5 text-sm sm:text-base line-clamp-2 leading-snug">{mod.name}</p>
                     </div>
                     <div>
-                      <p className="text-xs sm:text-sm text-white/70 mt-3 sm:mt-4 font-medium flex items-center gap-1.5">📹 {mod.video_count} video{mod.video_count !== 1 ? 's' : ''}</p>
+                      <p className="text-xs sm:text-sm text-white/70 mt-2.5 sm:mt-3.5 font-medium flex items-center gap-1.5">📹 {mod.video_count} video{mod.video_count !== 1 ? 's' : ''}</p>
                       <button
                         onClick={() => handleAddToDashboard(mod)}
                         disabled={addedModules.has(mod.id)}
-                        className={`mt-3.5 sm:mt-5 w-full py-2 sm:py-3 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
+                        className={`mt-3 sm:mt-4 w-full py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
                           addedModules.has(mod.id)
                             ? 'bg-emerald-500/25 border border-emerald-500/30 text-emerald-200 cursor-default'
                             : 'bg-blue-500/20 hover:bg-blue-500/35 text-blue-200 border border-blue-500/35 hover:border-blue-500/50 shadow-sm active:scale-95'

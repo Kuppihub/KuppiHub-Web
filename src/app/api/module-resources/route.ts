@@ -41,6 +41,12 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ categories: [], folders: [], resources: [], activeCategoryId: null });
     }
 
+    const { data: moduleData } = await supabaseAdmin
+      .from("modules")
+      .select("code,name")
+      .eq("id", moduleId)
+      .single();
+
     const parentFolderId =
       parentFolderIdParam === null ? null : parentFolderIdParam === "" ? null : Number(parentFolderIdParam);
 
@@ -89,6 +95,8 @@ export async function GET(req: NextRequest) {
       resources,
       activeCategoryId: categoryId,
       activeParentFolderId: parentFolderId,
+      moduleCode: moduleData?.code ?? "",
+      moduleName: moduleData?.name ?? "",
     });
   } catch (error) {
     console.error("Error loading module resources:", error);

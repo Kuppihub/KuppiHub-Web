@@ -70,6 +70,7 @@ type PersistedModuleCache = {
   resourcesMap: Array<[string, ResourceCacheEntry]>;
   didLoadCategories: boolean;
   categories: ResourceCategory[];
+  moduleTitle?: string;
 };
 
 export default function ModuleKuppiPage() {
@@ -97,6 +98,7 @@ export default function ModuleKuppiPage() {
     severity: 'success',
   });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [moduleTitle, setModuleTitle] = useState<string>('');
 
   const [activeDirectory, setActiveDirectory] = useState<'root' | 'kuppi' | 'resource'>('root');
   const [didLoadCategories, setDidLoadCategories] = useState(false);
@@ -124,6 +126,7 @@ export default function ModuleKuppiPage() {
       resourcesCacheRef.current = new Map(parsed.resourcesMap || []);
       if (parsed.videos) setVideos(parsed.videos);
       if (parsed.categories?.length) setCategories(parsed.categories);
+      if (parsed.moduleTitle) setModuleTitle(parsed.moduleTitle);
       if (parsed.didLoadCategories) {
         setDidLoadCategories(true);
         setResourcesLoading(false);
@@ -140,9 +143,10 @@ export default function ModuleKuppiPage() {
       resourcesMap: Array.from(resourcesCacheRef.current.entries()),
       didLoadCategories,
       categories,
+      moduleTitle,
     };
     window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
-  }, [storageKey, moduleId, didLoadCategories, categories, videos, folders, resources]);
+  }, [storageKey, moduleId, didLoadCategories, categories, videos, folders, resources, moduleTitle]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -238,6 +242,10 @@ export default function ModuleKuppiPage() {
       setCategories(nextEntry.categories);
       setFolders(nextEntry.folders);
       setResources(nextEntry.resources);
+
+      if (data.moduleCode && data.moduleName) {
+        setModuleTitle(`${data.moduleCode} - ${data.moduleName}`);
+      }
 
       if (activeCategoryId === null && data.activeCategoryId) {
         setActiveCategoryId(data.activeCategoryId);
@@ -431,16 +439,31 @@ export default function ModuleKuppiPage() {
   }
 
   return (
-    <Box className="min-h-screen py-12 px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <Box className="max-w-7xl mx-auto space-y-8">
-        <BackButton onClick={handleBack} className="mb-2" />
-        <PageHeader title="Module Content" subtitle="Open a directory to view kuppi videos or study resources" />
+    <Box className="min-h-screen py-6 sm:py-12 px-0 sm:px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Box className="max-w-7xl mx-auto space-y-4 sm:space-y-8">
+        <Box sx={{ px: { xs: 2, sm: 0 } }}>
+          <BackButton onClick={handleBack} className="mb-2" />
+          <PageHeader title={moduleTitle || "Module Content"} />
+        </Box>
 
-        <Paper elevation={0} sx={{ p: 3, borderRadius: 4, border: '1px solid rgba(255, 255, 255, 0.4)', background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.15))', backdropFilter: 'blur(20px) saturate(160%)', boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)' }}>
-          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+        <Paper 
+          elevation={0} 
+          sx={{ 
+            p: { xs: 2, sm: 3 }, 
+            borderRadius: { xs: 0, sm: 4 }, 
+            borderLeft: { xs: 'none', sm: '1px solid rgba(255, 255, 255, 0.4)' },
+            borderRight: { xs: 'none', sm: '1px solid rgba(255, 255, 255, 0.4)' },
+            borderTop: '1px solid rgba(255, 255, 255, 0.4)',
+            borderBottom: '1px solid rgba(255, 255, 255, 0.4)',
+            background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.15))', 
+            backdropFilter: 'blur(20px) saturate(160%)', 
+            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)' 
+          }}
+        >
+          <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mb: 2.5 }}>
             <Typography variant="h6" fontWeight={700}>Directory</Typography>
             {activeDirectory === 'kuppi' ? (
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                 <Button
                   variant="outlined"
                   onClick={goToRoot}
@@ -448,6 +471,7 @@ export default function ModuleKuppiPage() {
                     borderRadius: 999,
                     px: 3,
                     py: 1,
+                    width: { xs: '100%', sm: 'auto' },
                     textTransform: "none",
                     fontWeight: 700,
                     background: "rgba(255, 255, 255, 0.15)",
@@ -476,6 +500,7 @@ export default function ModuleKuppiPage() {
                     borderRadius: 999,
                     px: 3,
                     py: 1,
+                    width: { xs: '100%', sm: 'auto' },
                     textTransform: "none",
                     fontWeight: 700,
                     background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
@@ -497,7 +522,7 @@ export default function ModuleKuppiPage() {
                 </Button>
               </Stack>
             ) : activeDirectory === 'resource' ? (
-              <Stack direction="row" spacing={1.5} alignItems="center">
+              <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} sx={{ width: { xs: '100%', sm: 'auto' } }}>
                 <Button
                   variant="outlined"
                   onClick={goToRoot}
@@ -505,6 +530,7 @@ export default function ModuleKuppiPage() {
                     borderRadius: 999,
                     px: 3,
                     py: 1,
+                    width: { xs: '100%', sm: 'auto' },
                     textTransform: "none",
                     fontWeight: 700,
                     background: "rgba(255, 255, 255, 0.15)",
@@ -536,6 +562,7 @@ export default function ModuleKuppiPage() {
                     borderRadius: 999,
                     px: 3,
                     py: 1,
+                    width: { xs: '100%', sm: 'auto' },
                     textTransform: "none",
                     fontWeight: 700,
                     background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
