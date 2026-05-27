@@ -3,7 +3,7 @@ import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 
 const ALLOWED_DOMAIN_OPTIONS = ["@uom.lk", "@cse.mrt.ac.lk", "@gmail.com"] as const;
-const MAX_FILE_BYTES = 10 * 1024 * 1024;
+const MAX_FILE_BYTES = 4 * 1024 * 1024; // Limit to 4 MB for Vercel Serverless compatibility
 
 export async function POST(req: NextRequest) {
   try {
@@ -30,16 +30,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "module_id, category_id, title and file_url are required" }, { status: 400 });
     }
 
-    if (!fileType || fileType !== "application/pdf") {
-      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
+    const allowedExtensions = [".pdf", ".zip", ".doc", ".docx"];
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/zip",
+      "application/x-zip-compressed",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+
+    const fileNameLower = fileName.toLowerCase();
+    const hasAllowedExtension = allowedExtensions.some(ext => fileNameLower.endsWith(ext));
+    const hasAllowedMimeType = allowedMimeTypes.includes(fileType || "");
+
+    if (!hasAllowedExtension && !hasAllowedMimeType) {
+      return NextResponse.json(
+        { error: "Only PDF, ZIP, and Word Documents are allowed" },
+        { status: 400 }
+      );
     }
 
     if (typeof fileSizeBytes !== "number" || fileSizeBytes <= 0 || fileSizeBytes > MAX_FILE_BYTES) {
-      return NextResponse.json({ error: "PDF must be 10 MB or smaller" }, { status: 400 });
-    }
-
-    if (fileName && !fileName.toLowerCase().endsWith(".pdf")) {
-      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
+      const maxMb = (MAX_FILE_BYTES / (1024 * 1024)).toFixed(0);
+      return NextResponse.json(
+        { error: `File must be ${maxMb} MB or smaller` },
+        { status: 400 }
+      );
     }
 
     let validatedDomains: string[] | null = null;

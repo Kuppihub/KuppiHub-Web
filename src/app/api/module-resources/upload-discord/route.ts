@@ -5,7 +5,7 @@ import { authenticateRequest } from "@/lib/firebase-admin";
 export const runtime = "nodejs";
 
 const ALLOWED_DOMAIN_OPTIONS = ["@uom.lk", "@cse.mrt.ac.lk", "@gmail.com"] as const;
-const DEFAULT_MAX_BYTES = 10 * 1024 * 1024;
+const DEFAULT_MAX_BYTES = 4 * 1024 * 1024; // Cap strictly at 4 MB for Vercel Serverless
 
 function parseBoolean(value: FormDataEntryValue | null, defaultValue: boolean) {
   if (typeof value !== "string") return defaultValue;
@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
 
     const botToken = process.env.DISCORD_BOT_TOKEN?.trim();
     const channelId = process.env.DISCORD_UPLOAD_CHANNEL_ID?.trim();
-    const maxFileBytes = Number(process.env.DISCORD_MAX_FILE_BYTES || DEFAULT_MAX_BYTES);
+    const maxFileBytes = Math.min(
+      Number(process.env.DISCORD_MAX_FILE_BYTES || DEFAULT_MAX_BYTES),
+      4 * 1024 * 1024 // Cap strictly at 4 MB to comply with Vercel Serverless payloads
+    );
 
     if (!botToken || !channelId) {
       return NextResponse.json(
@@ -89,8 +92,9 @@ export async function POST(req: NextRequest) {
     }
 
     if (file.size > maxFileBytes) {
+      const maxMb = (maxFileBytes / (1024 * 1024)).toFixed(0);
       return NextResponse.json(
-        { error: `file exceeds max allowed size (${maxFileBytes} bytes)` },
+        { error: `File is too large. The maximum size allowed is ${maxMb} MB.` },
         { status: 400 }
       );
     }

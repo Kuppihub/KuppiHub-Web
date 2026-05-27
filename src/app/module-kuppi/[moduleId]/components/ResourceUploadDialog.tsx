@@ -130,6 +130,10 @@ export default function ResourceUploadDialog({
     if (!uploadCategoryId) return setUploadError('Please select a category.');
     if (!uploadTitle.trim()) return setUploadError('Please enter a title.');
     if (!uploadFile) return setUploadError('Please choose a file.');
+    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
+    if (uploadFile.size > MAX_FILE_SIZE) {
+      return setUploadError('File is too large. The maximum size allowed is 4 MB.');
+    }
     if (!turnstileToken) return setUploadError('Please complete the Cloudflare Turnstile verification.');
 
     if (uploadHasRestriction && uploadAllowedDomains.length === 0) {
@@ -244,7 +248,7 @@ export default function ResourceUploadDialog({
               />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-              PDF, ZIP, Word Docs only, max 10 MB
+              PDF, ZIP, Word Docs only, max 4 MB
             </Typography>
 
             {/* Access Restriction Option */}
