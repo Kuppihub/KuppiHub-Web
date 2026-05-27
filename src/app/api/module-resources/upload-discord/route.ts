@@ -35,6 +35,30 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData();
 
+    const turnstileToken = formData.get("turnstileToken");
+    if (!turnstileToken || typeof turnstileToken !== "string") {
+      return NextResponse.json({ error: "Verification required" }, { status: 400 });
+    }
+
+    if (!process.env.TURNSTILE_SECRET_KEY) {
+      console.error('Missing TURNSTILE_SECRET_KEY');
+      return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 });
+    }
+
+    const verifyRes = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        secret: process.env.TURNSTILE_SECRET_KEY,
+        response: turnstileToken,
+      }),
+    });
+
+    const verifyData = await verifyRes.json();
+    if (!verifyData?.success) {
+      return NextResponse.json({ error: 'Verification failed' }, { status: 400 });
+    }
+
     const moduleId = Number(formData.get("module_id"));
     const categoryId = Number(formData.get("category_id"));
     const folderIdRaw = formData.get("folder_id");
@@ -157,7 +181,7 @@ export async function POST(req: NextRequest) {
         attachment_id: attachment.id,
         cdn_url: attachment.url,
       },
-      message: "Uploaded to Discord and saved. Pending admin approval.",
+      message: "Resource uploaded successfully! Pending admin approval.",
     });
   } catch (error) {
     console.error("Error uploading resource via Discord:", error);

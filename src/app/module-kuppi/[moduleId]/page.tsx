@@ -18,6 +18,7 @@ import {
   MenuItem,
   Paper,
   Select,
+  Snackbar,
   Stack,
   Typography,
 } from '@mui/material';
@@ -86,7 +87,15 @@ export default function ModuleKuppiPage() {
   const [resourcesLoading, setResourcesLoading] = useState(true);
 
   const [uploadCategoryId, setUploadCategoryId] = useState<number | null>(null);
-  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [notification, setNotification] = useState<{
+    open: boolean;
+    message: string;
+    severity: 'success' | 'error';
+  }>({
+    open: false,
+    message: '',
+    severity: 'success',
+  });
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const [activeDirectory, setActiveDirectory] = useState<'root' | 'kuppi' | 'resource'>('root');
@@ -699,8 +708,6 @@ export default function ModuleKuppiPage() {
                 {getCategoryNotice().text}
               </Alert>
 
-              {uploadMessage ? <Alert severity="success">{uploadMessage}</Alert> : null}
-
               {resourcesLoading ? (
                 <Stack direction="row" spacing={1.5} alignItems="center">
                   <CircularProgress size={20} />
@@ -784,10 +791,21 @@ export default function ModuleKuppiPage() {
                 open={uploadDialogOpen}
                 onClose={() => setUploadDialogOpen(false)}
                 onUploadSuccess={(msg) => {
-                  setUploadMessage(msg);
+                  setNotification({
+                    open: true,
+                    message: msg,
+                    severity: 'success',
+                  });
                   forceExpireCache();
                   resourcesCacheRef.current.clear();
                   fetchResources();
+                }}
+                onUploadError={(msg) => {
+                  setNotification({
+                    open: true,
+                    message: msg,
+                    severity: 'error',
+                  });
                 }}
                 moduleId={moduleId}
                 uploadCategoryId={uploadCategoryId}
@@ -799,6 +817,22 @@ export default function ModuleKuppiPage() {
           ) : null}
         </Paper>
       </Box>
+
+      <Snackbar
+        open={notification.open}
+        autoHideDuration={6000}
+        onClose={() => setNotification({ ...notification, open: false })}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+      >
+        <Alert
+          onClose={() => setNotification({ ...notification, open: false })}
+          severity={notification.severity}
+          variant="filled"
+          sx={{ width: '100%' }}
+        >
+          {notification.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 }

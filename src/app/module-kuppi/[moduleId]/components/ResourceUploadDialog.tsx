@@ -1,6 +1,5 @@
-'use client';
-
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import Script from 'next/script';
 import {
   Alert,
   Box,
@@ -26,6 +25,7 @@ interface ResourceUploadDialogProps {
   open: boolean;
   onClose: () => void;
   onUploadSuccess: (message: string) => void;
+  onUploadError?: (message: string) => void;
   moduleId: string;
   uploadCategoryId: number | null;
   categoryName: string;
@@ -37,6 +37,7 @@ export default function ResourceUploadDialog({
   open,
   onClose,
   onUploadSuccess,
+  onUploadError,
   moduleId,
   uploadCategoryId,
   categoryName,
@@ -50,8 +51,59 @@ export default function ResourceUploadDialog({
   const [uploadAllowedDomains, setUploadAllowedDomains] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
   
   const { user } = useAuth();
+
+  useEffect(() => {
+    if (!open || typeof window === 'undefined') return;
+
+    // Define callbacks on window
+    (window as any).onTurnstileSuccess = (token: string) => {
+      setTurnstileToken(token);
+    };
+    (window as any).onTurnstileExpire = () => {
+      setTurnstileToken('');
+    };
+    (window as any).onTurnstileError = () => {
+      setTurnstileToken('');
+    };
+
+    // If turnstile library is already loaded, render or reset
+    const renderTurnstile = () => {
+      const turnstile = (window as any).turnstile;
+      if (turnstile) {
+        try {
+          const container = document.getElementById('dialog-turnstile-container');
+          if (container) {
+            container.innerHTML = '<div class="cf-turnstile"></div>';
+            const element = container.querySelector('.cf-turnstile');
+            if (element) {
+              turnstile.render(element, {
+                sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '',
+                callback: 'onTurnstileSuccess',
+                'expired-callback': 'onTurnstileExpire',
+                'error-callback': 'onTurnstileError',
+              });
+            }
+          }
+        } catch (e) {
+          console.error("Turnstile render error:", e);
+        }
+      }
+    };
+
+    const timer = setTimeout(() => {
+      renderTurnstile();
+    }, 150);
+
+    return () => {
+      clearTimeout(timer);
+      delete (window as any).onTurnstileSuccess;
+      delete (window as any).onTurnstileExpire;
+      delete (window as any).onTurnstileError;
+    };
+  }, [open]);
 
   const handleClose = () => {
     if (uploading) return;
@@ -61,6 +113,7 @@ export default function ResourceUploadDialog({
     setUploadHasRestriction(false);
     setUploadAllowedDomains([]);
     setUploadError(null);
+    setTurnstileToken('');
     onClose();
   };
 
@@ -72,6 +125,7 @@ export default function ResourceUploadDialog({
     if (!uploadCategoryId) return setUploadError('Please select a category.');
     if (!uploadTitle.trim()) return setUploadError('Please enter a title.');
     if (!uploadFile) return setUploadError('Please choose a file.');
+    if (!turnstileToken) return setUploadError('Please complete the Cloudflare Turnstile verification.');
 
     if (uploadHasRestriction && uploadAllowedDomains.length === 0) {
       return setUploadError('Please select at least one email domain or disable the restriction.');
@@ -89,6 +143,7 @@ export default function ResourceUploadDialog({
       fd.append('title', uploadTitle.trim());
       fd.append('description', uploadDescription.trim());
       fd.append('is_public', uploadHasRestriction ? 'false' : 'true');
+      fd.append('turnstileToken', turnstileToken);
       
       if (uploadHasRestriction) {
         uploadAllowedDomains.forEach((domain) => {
@@ -112,10 +167,13 @@ export default function ResourceUploadDialog({
       setUploadFile(null);
       setUploadHasRestriction(false);
       setUploadAllowedDomains([]);
+      setTurnstileToken('');
       onUploadSuccess(data?.message || 'Uploaded successfully.');
       handleClose();
     } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+      const errorMsg = err instanceof Error ? err.message : 'Upload failed';
+      setUploadError(errorMsg);
+      onUploadError?.(errorMsg);
     } finally {
       setUploading(false);
     }
@@ -128,6 +186,11 @@ export default function ResourceUploadDialog({
       fullWidth
       maxWidth="sm"
     >
+      <Script
+        src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+        async
+        defer
+      />
       <DialogTitle>{addButtonLabel}</DialogTitle>
       <Box component="form" onSubmit={handleUpload}>
         <DialogContent>
@@ -298,11 +361,18 @@ export default function ResourceUploadDialog({
                 </Box>
               )}
             </Box>
+
+            {/* Cloudflare Turnstile Verification */}
+            <Box sx={{ display: 'flex', justifyContent: 'center', my: 1.5 }}>
+              <div id="dialog-turnstile-container">
+                <div className="cf-turnstile"></div>
+              </div>
+            </Box>
           </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose} disabled={uploading}>Cancel</Button>
-          <Button type="submit" variant="contained" disabled={uploading}>
+          <Button type="submit" variant="contained" disabled={uploading || !turnstileToken}>
             {uploading ? 'Uploading...' : 'Upload'}
           </Button>
         </DialogActions>

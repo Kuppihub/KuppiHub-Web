@@ -580,6 +580,7 @@ export default function DashboardPage() {
 
                         {editMode ? (
                           <IconButton
+                            component="span"
                             aria-label="remove module"
                             onClick={(e) => handleRemoveModule(e, m.module_id)}
                             size="small"
