@@ -69,32 +69,37 @@ export default function ResourceUploadDialog({
       setTurnstileToken('');
     };
 
-    // If turnstile library is already loaded, render or reset
-    const renderTurnstile = () => {
+    // Force Turnstile to scan the dynamically inserted DOM element
+    const triggerImplicitRender = () => {
       const turnstile = (window as any).turnstile;
-      if (turnstile) {
+      if (turnstile && typeof turnstile.implicitRender === 'function') {
         try {
           const container = document.getElementById('dialog-turnstile-container');
           if (container) {
-            container.innerHTML = '<div class="cf-turnstile"></div>';
-            const element = container.querySelector('.cf-turnstile');
-            if (element) {
-              turnstile.render(element, {
-                sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '',
-                callback: 'onTurnstileSuccess',
-                'expired-callback': 'onTurnstileExpire',
-                'error-callback': 'onTurnstileError',
-              });
-            }
+            // Restore standard class and attributes
+            const sitekey = typeof process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY === 'string' && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+              ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+              : '1x00000000000000000000AA';
+
+            container.innerHTML = `
+              <div 
+                class="cf-turnstile" 
+                data-sitekey="${sitekey}"
+                data-callback="onTurnstileSuccess"
+                data-expired-callback="onTurnstileExpire"
+                data-error-callback="onTurnstileError"
+              ></div>
+            `;
+            turnstile.implicitRender();
           }
         } catch (e) {
-          console.error("Turnstile render error:", e);
+          console.error("Turnstile implicitRender error:", e);
         }
       }
     };
 
     const timer = setTimeout(() => {
-      renderTurnstile();
+      triggerImplicitRender();
     }, 150);
 
     return () => {
@@ -365,7 +370,17 @@ export default function ResourceUploadDialog({
             {/* Cloudflare Turnstile Verification */}
             <Box sx={{ display: 'flex', justifyContent: 'center', my: 1.5 }}>
               <div id="dialog-turnstile-container">
-                <div className="cf-turnstile"></div>
+                <div
+                  className="cf-turnstile"
+                  data-sitekey={
+                    typeof process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY === 'string' && process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+                      ? process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
+                      : '1x00000000000000000000AA'
+                  }
+                  data-callback="onTurnstileSuccess"
+                  data-expired-callback="onTurnstileExpire"
+                  data-error-callback="onTurnstileError"
+                ></div>
               </div>
             </Box>
           </Stack>
