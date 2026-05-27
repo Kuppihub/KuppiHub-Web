@@ -1,7 +1,30 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { useRouter, useParams } from 'next/navigation';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { useRouter, useParams, useSearchParams } from 'next/navigation';
+import {
+  Alert,
+  Box,
+  Breadcrumbs,
+  Button,
+  Card,
+  CardActionArea,
+  CardContent,
+  CircularProgress,
+  FormControl,
+  Grid,
+  InputLabel,
+  Link,
+  MenuItem,
+  Paper,
+  Select,
+  Stack,
+  TextField,
+  Typography,
+} from '@mui/material';
+import FolderIcon from '@mui/icons-material/Folder';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import DescriptionIcon from '@mui/icons-material/Description';
 import VideoCard from '../../components/VideoCard';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
@@ -33,11 +56,17 @@ type ResourceItem = {
   created_at: string;
 };
 
+type ResourceCacheEntry = {
+  categories: ResourceCategory[];
+  folders: ResourceFolder[];
+  resources: ResourceItem[];
+};
+
 export default function ModuleKuppiPage() {
   const [videos, setVideos] = useState<Video[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [videosLoading, setVideosLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeVideoId, setActiveVideoId] = useState<number | null>(null);
+  const [openVideoIds, setOpenVideoIds] = useState<number[]>([]);
 
   const [categories, setCategories] = useState<ResourceCategory[]>([]);
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
@@ -47,74 +76,167 @@ export default function ModuleKuppiPage() {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [resourcesLoading, setResourcesLoading] = useState(true);
 
+  const [uploadTitle, setUploadTitle] = useState('');
+  const [uploadDescription, setUploadDescription] = useState('');
+  const [uploadCategoryId, setUploadCategoryId] = useState<number | null>(null);
+  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const [activeDirectory, setActiveDirectory] = useState<'root' | 'kuppi' | 'resource'>('root');
+  const [didLoadCategories, setDidLoadCategories] = useState(false);
+
+  const videosCacheRef = useRef<Video[] | null>(null);
+  const resourcesCacheRef = useRef<Map<string, ResourceCacheEntry>>(new Map());
+
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const moduleId = params.moduleId as string;
   const { user } = useAuth();
 
-  useEffect(() => {
+  const syncExplorerUrl = useCallback(
+    (next: { view: 'root' | 'kuppi' | 'resource'; categoryId?: number | null; folderId?: number | null }) => {
+      const qs = new URLSearchParams(searchParams.toString());
+      qs.set('view', next.view);
+      if (next.categoryId) qs.set('category', String(next.categoryId));
+      else qs.delete('category');
+      if (next.folderId) qs.set('folder', String(next.folderId));
+      else qs.delete('folder');
+      router.push(`/module-kuppi/${moduleId}?${qs.toString()}`);
+    },
+    [router, moduleId, searchParams]
+  );
+
+  const fetchVideos = useCallback(async () => {
     if (!moduleId) return;
+    if (videosCacheRef.current) {
+      setVideos(videosCacheRef.current);
+      return;
+    }
 
-    const fetchVideos = async () => {
-      try {
-        const emailParam = user?.email ? `&userEmail=${encodeURIComponent(user.email)}` : '';
-        const res = await fetch(`/api/kuppis?moduleId=${moduleId}${emailParam}`);
-        if (!res.ok) throw new Error('Failed to fetch videos');
-        const data: Video[] = await res.json();
-        setVideos(data);
-        if (data.length > 0) {
-          setActiveVideoId(data[0].id);
-        }
-      } catch {
-        setError('Failed to load videos');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVideos();
+    setVideosLoading(true);
+    try {
+      const emailParam = user?.email ? `&userEmail=${encodeURIComponent(user.email)}` : '';
+      const res = await fetch(`/api/kuppis?moduleId=${moduleId}${emailParam}`);
+      if (!res.ok) throw new Error('Failed to fetch videos');
+      const data: Video[] = await res.json();
+      videosCacheRef.current = data;
+      setVideos(data);
+      setOpenVideoIds([]);
+    } catch {
+      setError('Failed to load videos');
+    } finally {
+      setVideosLoading(false);
+    }
   }, [moduleId, user]);
 
   const fetchResources = useCallback(async () => {
     if (!moduleId) return;
 
+    const cacheKey = `${moduleId}:${activeCategoryId ?? 'none'}:${activeParentFolderId ?? 'root'}`;
+    const cached = resourcesCacheRef.current.get(cacheKey);
+    if (cached) {
+      setCategories(cached.categories);
+      setFolders(cached.folders);
+      setResources(cached.resources);
+      setResourcesLoading(false);
+      return;
+    }
+
     setResourcesLoading(true);
     try {
-      const params = new URLSearchParams();
-      params.set('moduleId', moduleId);
-      if (activeCategoryId !== null) params.set('categoryId', String(activeCategoryId));
-      if (activeParentFolderId !== null) params.set('parentFolderId', String(activeParentFolderId));
-      const token = await getIdToken(user);
-      if (!token) return;
+      const qs = new URLSearchParams();
+      qs.set('moduleId', moduleId);
+      if (activeCategoryId !== null) qs.set('categoryId', String(activeCategoryId));
+      if (activeParentFolderId !== null) qs.set('parentFolderId', String(activeParentFolderId));
 
-      const res = await fetch(`/api/module-resources?${params.toString()}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const token = await getIdToken(user);
+      if (!token) {
+        setResourcesLoading(false);
+        return;
+      }
+
+      const res = await fetch(`/api/module-resources?${qs.toString()}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) throw new Error('Failed to load resources');
-      const data = await res.json();
 
-      setCategories(data.categories || []);
-      setFolders(data.folders || []);
-      setResources(data.resources || []);
+      const data = await res.json();
+      const nextEntry: ResourceCacheEntry = {
+        categories: data.categories || [],
+        folders: data.folders || [],
+        resources: data.resources || [],
+      };
+      resourcesCacheRef.current.set(cacheKey, nextEntry);
+      setCategories(nextEntry.categories);
+      setFolders(nextEntry.folders);
+      setResources(nextEntry.resources);
+
       if (activeCategoryId === null && data.activeCategoryId) {
         setActiveCategoryId(data.activeCategoryId);
+      }
+      if (uploadCategoryId === null && data.activeCategoryId) {
+        setUploadCategoryId(data.activeCategoryId);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setResourcesLoading(false);
     }
-  }, [moduleId, activeCategoryId, activeParentFolderId, user]);
+  }, [moduleId, activeCategoryId, activeParentFolderId, user, uploadCategoryId]);
 
   useEffect(() => {
+    if (activeDirectory !== 'resource') return;
     fetchResources();
-  }, [fetchResources]);
+  }, [activeDirectory, fetchResources]);
+
+  useEffect(() => {
+    if (!didLoadCategories) return;
+    if (activeDirectory !== 'kuppi') return;
+    fetchVideos();
+  }, [activeDirectory, didLoadCategories, fetchVideos]);
+
+  useEffect(() => {
+    if (didLoadCategories || !moduleId || !user) return;
+    fetchResources().finally(() => setDidLoadCategories(true));
+  }, [didLoadCategories, moduleId, user, fetchResources]);
+
+  useEffect(() => {
+    if (!didLoadCategories) return;
+
+    const viewParam = searchParams.get('view');
+    const categoryParam = searchParams.get('category');
+    const folderParam = searchParams.get('folder');
+
+    if (viewParam === 'kuppi') {
+      setActiveDirectory('kuppi');
+      return;
+    }
+
+    if (viewParam === 'resource') {
+      const categoryId = categoryParam ? Number(categoryParam) : null;
+      const folderId = folderParam ? Number(folderParam) : null;
+      setActiveDirectory('resource');
+      if (categoryId && !Number.isNaN(categoryId)) {
+        setActiveCategoryId(categoryId);
+        setUploadCategoryId(categoryId);
+      }
+      setActiveParentFolderId(folderId && !Number.isNaN(folderId) ? folderId : null);
+      return;
+    }
+
+    setActiveDirectory('root');
+    setActiveParentFolderId(null);
+    setFolderTrail([]);
+  }, [searchParams, didLoadCategories]);
 
   const handleBack = () => router.back();
   const handleToggleVideo = (id: number) => {
-    setActiveVideoId(activeVideoId === id ? null : id);
+    setOpenVideoIds((prev) => (
+      prev.includes(id) ? prev.filter((videoId) => videoId !== id) : [...prev, id]
+    ));
   };
 
   const getReferenceDate = (video: Video) => video.published_at ?? video.created_at;
@@ -149,142 +271,336 @@ export default function ModuleKuppiPage() {
   });
 
   const openFolder = (folder: ResourceFolder) => {
+    setFolders([]);
+    setResources([]);
+    setResourcesLoading(true);
     setFolderTrail((prev) => [...prev, { id: folder.id, name: folder.name }]);
     setActiveParentFolderId(folder.id);
+    syncExplorerUrl({ view: 'resource', categoryId: activeCategoryId, folderId: folder.id });
   };
 
-  const goRoot = () => {
-    setFolderTrail([]);
-    setActiveParentFolderId(null);
-  };
-
-  const goToTrail = (index: number) => {
+  const goToFolderTrail = (index: number) => {
+    setFolders([]);
+    setResources([]);
+    setResourcesLoading(true);
     const nextTrail = folderTrail.slice(0, index + 1);
     setFolderTrail(nextTrail);
-    setActiveParentFolderId(nextTrail[nextTrail.length - 1]?.id ?? null);
+    const nextFolderId = nextTrail[nextTrail.length - 1]?.id ?? null;
+    setActiveParentFolderId(nextFolderId);
+    syncExplorerUrl({ view: 'resource', categoryId: activeCategoryId, folderId: nextFolderId });
   };
 
-  if (loading) {
+  const enterResourceCategory = (categoryId: number) => {
+    setFolders([]);
+    setResources([]);
+    setResourcesLoading(true);
+    setActiveDirectory('resource');
+    setActiveCategoryId(categoryId);
+    setUploadCategoryId(categoryId);
+    setActiveParentFolderId(null);
+    setFolderTrail([]);
+    syncExplorerUrl({ view: 'resource', categoryId, folderId: null });
+  };
+
+  const goToRoot = () => {
+    setActiveDirectory('root');
+    setActiveParentFolderId(null);
+    setFolderTrail([]);
+    syncExplorerUrl({ view: 'root', categoryId: null, folderId: null });
+  };
+
+  const handleUpload = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setUploadError(null);
+    setUploadMessage(null);
+
+    if (!user) return setUploadError('Please log in to upload resources.');
+    if (!uploadCategoryId) return setUploadError('Please select a category.');
+    if (!uploadTitle.trim()) return setUploadError('Please enter a title.');
+    if (!uploadFile) return setUploadError('Please choose a file.');
+
+    setUploading(true);
+    try {
+      const token = await getIdToken(user);
+      if (!token) return setUploadError('Failed to authenticate upload request.');
+
+      const fd = new FormData();
+      fd.append('module_id', moduleId);
+      fd.append('category_id', String(uploadCategoryId));
+      fd.append('folder_id', activeParentFolderId === null ? '' : String(activeParentFolderId));
+      fd.append('title', uploadTitle.trim());
+      fd.append('description', uploadDescription.trim());
+      fd.append('is_public', 'true');
+      fd.append('file', uploadFile);
+
+      const res = await fetch('/api/module-resources/upload-discord', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+        body: fd,
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.error || 'Upload failed');
+
+      setUploadTitle('');
+      setUploadDescription('');
+      setUploadFile(null);
+      setUploadMessage(data?.message || 'Uploaded successfully.');
+      resourcesCacheRef.current.clear();
+      await fetchResources();
+    } catch (err) {
+      setUploadError(err instanceof Error ? err.message : 'Upload failed');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  if (!didLoadCategories && resourcesLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <p className="text-xl text-blue-600">Loading videos...</p>
-      </div>
+      <Box className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Stack direction="row" spacing={2} alignItems="center">
+          <CircularProgress size={22} />
+          <Typography color="primary">Loading module content...</Typography>
+        </Stack>
+      </Box>
     );
   }
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <p className="text-red-500 text-xl">{error}</p>
-      </div>
+      <Box className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+        <Alert severity="error">{error}</Alert>
+      </Box>
     );
   }
 
   return (
-    <div className="min-h-screen py-12 px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="max-w-7xl mx-auto space-y-10">
-        <BackButton onClick={handleBack} className="mb-8" />
+    <Box className="min-h-screen py-12 px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
+      <Box className="max-w-7xl mx-auto space-y-8">
+        <BackButton onClick={handleBack} className="mb-2" />
+        <PageHeader title="Module Content" subtitle="Open a directory to view kuppi videos or study resources" />
 
-        <PageHeader title="Module Content" subtitle="Explore videos and downloadable learning resources" />
+        <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dbeafe', background: 'rgba(255,255,255,0.9)' }}>
+          <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+            <Typography variant="h6" fontWeight={700}>Directory</Typography>
+            {activeDirectory !== 'root' && (
+              <Button variant="outlined" onClick={goToRoot}>Back To Root</Button>
+            )}
+          </Stack>
 
-        <section className="rounded-2xl border border-indigo-100 bg-white/80 p-6 shadow-sm">
-          <h2 className="text-xl font-semibold text-indigo-900 mb-4">Resource Library</h2>
-
-          <div className="flex flex-wrap gap-2 mb-4">
-            {categories.map((category) => (
-              <button
-                key={category.id}
-                type="button"
-                onClick={() => {
-                  setActiveCategoryId(category.id);
-                  setActiveParentFolderId(null);
-                  setFolderTrail([]);
-                }}
-                className={`px-3 py-1.5 rounded-full text-sm border ${
-                  activeCategoryId === category.id
-                    ? 'bg-indigo-600 text-white border-indigo-600'
-                    : 'bg-white text-indigo-700 border-indigo-200'
-                }`}
+          <Breadcrumbs sx={{ mb: 3 }}>
+            <Link component="button" underline="hover" onClick={goToRoot}>Root</Link>
+            {activeDirectory === 'kuppi' ? (
+              <Typography color="text.primary">Kuppi</Typography>
+            ) : null}
+            {activeDirectory === 'resource' ? (
+              <Typography color="text.primary">{categories.find((c) => c.id === activeCategoryId)?.name || 'Resources'}</Typography>
+            ) : null}
+            {activeDirectory === 'resource' && folderTrail.map((entry, idx) => (
+              <Link
+                key={entry.id}
+                component="button"
+                underline="hover"
+                onClick={() => goToFolderTrail(idx)}
               >
-                {category.name}
-              </button>
+                {entry.name}
+              </Link>
             ))}
-          </div>
+          </Breadcrumbs>
 
-          <div className="text-sm text-indigo-700 mb-4">
-            <button type="button" onClick={goRoot} className="underline mr-2">Root</button>
-            {folderTrail.map((entry, idx) => (
-              <span key={entry.id}>
-                /{' '}
-                <button type="button" onClick={() => goToTrail(idx)} className="underline">
-                  {entry.name}
-                </button>{' '}
-              </span>
-            ))}
-          </div>
+          {activeDirectory === 'root' ? (
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                <Card variant="outlined">
+                  <CardActionArea onClick={async () => {
+                    setActiveDirectory('kuppi');
+                    setOpenVideoIds([]);
+                    syncExplorerUrl({ view: 'kuppi', categoryId: null, folderId: null });
+                    await fetchVideos();
+                  }}>
+                    <CardContent>
+                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+                        <VideoLibraryIcon color="primary" />
+                        <Typography variant="h6">Kuppi</Typography>
+                      </Stack>
+                      <Typography variant="body2" color="text.secondary">
+                        View all kuppi videos for this module.
+                      </Typography>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
+              </Grid>
 
-          {resourcesLoading ? <p className="text-indigo-600">Loading resources...</p> : null}
-
-          {!resourcesLoading && folders.length === 0 && resources.length === 0 ? (
-            <p className="text-gray-600">No resources in this location yet.</p>
+              {categories.map((category) => (
+                <Grid key={category.id} size={{ xs: 12, sm: 6, md: 4 }}>
+                  <Card variant="outlined">
+                    <CardActionArea onClick={() => enterResourceCategory(category.id)}>
+                      <CardContent>
+                        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
+                          <FolderIcon color="warning" />
+                          <Typography variant="h6">{category.name}</Typography>
+                        </Stack>
+                        <Typography variant="body2" color="text.secondary">
+                          Open folder and view files.
+                        </Typography>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                </Grid>
+              ))}
+            </Grid>
           ) : null}
 
-          <div className="space-y-2">
-            {folders.map((folder) => (
-              <button
-                key={folder.id}
-                type="button"
-                onClick={() => openFolder(folder)}
-                className="w-full text-left px-4 py-3 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100"
-              >
-                [Folder] {folder.name}
-              </button>
-            ))}
-
-            {resources.map((resource) => (
-              <a
-                key={resource.id}
-                href={resource.file_url}
-                target="_blank"
-                rel="noreferrer"
-                className="block px-4 py-3 rounded-lg border border-indigo-100 bg-white hover:bg-indigo-50"
-              >
-                <div className="font-medium text-indigo-900">{resource.title}</div>
-                {resource.description ? <div className="text-sm text-gray-600">{resource.description}</div> : null}
-                <div className="text-xs text-indigo-600 mt-1">Open / Download</div>
-              </a>
-            ))}
-          </div>
-        </section>
-
-        {videos.length === 0 ? (
-          <EmptyState />
-        ) : (
-          <div className="space-y-10">
-            {sortedYears.map((year) => (
-              <div key={year}>
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="text-sm font-semibold uppercase tracking-wider text-indigo-700/80 bg-white/70 px-3 py-1 rounded-full shadow-sm border border-indigo-100">
-                    {year}
-                  </div>
-                  <div className="h-px flex-1 bg-indigo-200/60" />
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {videosByYear[year].map((video) => (
-                    <VideoCard
-                      key={video.id}
-                      video={video}
-                      moduleId={moduleId}
-                      isActive={activeVideoId === video.id}
-                      onToggle={handleToggleVideo}
-                    />
+          {activeDirectory === 'kuppi' ? (
+            <Stack spacing={2}>
+              <Alert severity="info">All Kuppi cards start collapsed. Open only what you need.</Alert>
+              {videosLoading ? (
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <CircularProgress size={20} />
+                  <Typography>Loading videos...</Typography>
+                </Stack>
+              ) : videos.length === 0 ? (
+                <EmptyState />
+              ) : (
+                <Stack spacing={4}>
+                  {sortedYears.map((year) => (
+                    <Paper key={year} variant="outlined" sx={{ p: 2.5, borderRadius: 2 }}>
+                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
+                        <Typography variant="subtitle1" fontWeight={700}>{year}</Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {videosByYear[year].length} videos
+                        </Typography>
+                      </Stack>
+                      <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                        {videosByYear[year].map((video) => (
+                          <VideoCard
+                            key={video.id}
+                            video={video}
+                            moduleId={moduleId}
+                            isActive={openVideoIds.includes(video.id)}
+                            onToggle={handleToggleVideo}
+                          />
+                        ))}
+                      </Box>
+                    </Paper>
                   ))}
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
+                </Stack>
+              )}
+            </Stack>
+          ) : null}
+
+          {activeDirectory === 'resource' ? (
+            <Stack spacing={2}>
+              <Alert severity="info">Uploaded files are visible to others only after admin approval.</Alert>
+
+              <Box component="form" onSubmit={handleUpload}>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Title"
+                      placeholder="e.g., Past Paper 2024"
+                      value={uploadTitle}
+                      onChange={(e) => setUploadTitle(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControl fullWidth>
+                      <InputLabel id="upload-category-label">Category</InputLabel>
+                      <Select
+                        labelId="upload-category-label"
+                        label="Category"
+                        value={uploadCategoryId ?? ''}
+                        onChange={(e) => {
+                          const nextId = e.target.value ? Number(e.target.value) : null;
+                          setUploadCategoryId(nextId);
+                          if (nextId) enterResourceCategory(nextId);
+                        }}
+                      >
+                        {categories.map((category) => (
+                          <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <TextField
+                      fullWidth
+                      label="Description"
+                      placeholder="Optional"
+                      value={uploadDescription}
+                      onChange={(e) => setUploadDescription(e.target.value)}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Button variant="outlined" component="label" fullWidth>
+                      {uploadFile ? `Selected: ${uploadFile.name}` : 'Choose File'}
+                      <input
+                        type="file"
+                        hidden
+                        onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
+                      />
+                    </Button>
+                  </Grid>
+                  <Grid size={{ xs: 12 }}>
+                    <Button type="submit" variant="contained" disabled={uploading}>
+                      {uploading ? 'Uploading...' : 'Upload Resource'}
+                    </Button>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {uploadMessage ? <Alert severity="success">{uploadMessage}</Alert> : null}
+              {uploadError ? <Alert severity="error">{uploadError}</Alert> : null}
+
+              {resourcesLoading ? (
+                <Stack direction="row" spacing={1.5} alignItems="center">
+                  <CircularProgress size={20} />
+                  <Typography>Loading resources...</Typography>
+                </Stack>
+              ) : null}
+
+              {!resourcesLoading && folders.length === 0 && resources.length === 0 ? (
+                <Typography color="text.secondary">No resources found in this folder.</Typography>
+              ) : null}
+
+              <Stack spacing={1.5}>
+                {folders.map((folder) => (
+                  <Card key={folder.id} variant="outlined">
+                    <CardActionArea onClick={() => openFolder(folder)}>
+                      <CardContent>
+                        <Stack direction="row" spacing={1.5} alignItems="center">
+                          <FolderIcon color="warning" />
+                          <Typography fontWeight={600}>{folder.name}</Typography>
+                        </Stack>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                ))}
+
+                {resources.map((resource) => (
+                  <Card key={resource.id} variant="outlined">
+                    <CardActionArea component="a" href={resource.file_url} target="_blank" rel="noreferrer">
+                      <CardContent>
+                        <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                          <DescriptionIcon color="primary" />
+                          <Box>
+                            <Typography fontWeight={600}>{resource.title}</Typography>
+                            {resource.description ? (
+                              <Typography variant="body2" color="text.secondary">{resource.description}</Typography>
+                            ) : null}
+                            <Typography variant="caption" color="primary">Open / Download</Typography>
+                          </Box>
+                        </Stack>
+                      </CardContent>
+                    </CardActionArea>
+                  </Card>
+                ))}
+              </Stack>
+            </Stack>
+          ) : null}
+        </Paper>
+      </Box>
+    </Box>
   );
 }

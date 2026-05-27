@@ -15,10 +15,11 @@ const sanitizeReview = (review: any) => {
 };
 
 export async function GET(
-  _req: NextRequest,
+  req: NextRequest,
   { params }: { params: Promise<{ kuppiId: string }> }
 ) {
   try {
+    const user = await authenticateRequest(req.headers.get("authorization"));
     const { kuppiId } = await params;
     const db = await getDb();
     const reviews = await db
@@ -27,8 +28,11 @@ export async function GET(
       .sort({ createdAt: -1 })
       .toArray();
 
-    // Remove userName from all reviews
-    const sanitizedReviews = reviews.map(sanitizeReview);
+    // Remove userName and include whether this review belongs to current user
+    const sanitizedReviews = reviews.map((review) => ({
+      ...sanitizeReview(review),
+      mine: user ? review.userId === user.uid : false,
+    }));
 
     return NextResponse.json({ reviews: sanitizedReviews });
   } catch (error) {

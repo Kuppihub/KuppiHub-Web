@@ -1,29 +1,27 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Alert, Box, CircularProgress, Rating, Stack, Typography } from "@mui/material";
 import { useAuth } from "@/contexts/AuthContext";
-import { authPost } from "@/lib/auth-fetch";
-import { Send } from "lucide-react";
+import { authGet, authPost } from "@/lib/auth-fetch";
 
 interface Review {
   _id: string;
-  userId?: string;
-  userName?: string;
   rating: number;
-  title?: string;
-  body: string;
-  createdAt: string;
+  mine?: boolean;
 }
 
 export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
   const { user } = useAuth();
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [reviewRating, setReviewRating] = useState<number | null>(null);
   const [message, setMessage] = useState<string | null>(null);
+
   const currentUserReview = useMemo(
-    () => reviews.find((review) => review.userId === user?.uid) ?? null,
-    [reviews, user?.uid]
+    () => reviews.find((review) => review.mine) ?? null,
+    [reviews]
   );
 
   const averageRating = useMemo(() => {
@@ -37,12 +35,14 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
   const fetchReviews = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/kuppi/${kuppiId}/reviews`);
+      const res = user
+        ? await authGet(`/api/kuppi/${kuppiId}/reviews`)
+        : await fetch(`/api/kuppi/${kuppiId}/reviews`);
       const data = await res.json();
       setReviews(data.reviews || []);
     } catch (error) {
       console.error(error);
-      setMessage("Failed to load reviews");
+      setMessage("Failed to load ratings");
     } finally {
       setLoading(false);
     }
@@ -51,32 +51,32 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
   useEffect(() => {
     if (!kuppiId) return;
     fetchReviews();
-  }, [kuppiId]);
+  }, [kuppiId, user]);
 
   useEffect(() => {
     setReviewRating(currentUserReview?.rating ?? null);
   }, [currentUserReview]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRatingChange = async (_event: unknown, value: number | null) => {
+    if (value === null) return;
     setMessage(null);
+
     if (!user) {
-      setMessage("Please log in to submit a review.");
+      setMessage("Please log in to rate.");
       return;
     }
-    if (reviewRating === null) {
-      setMessage("Please select a rating.");
-      return;
-    }
+
+    const previous = reviewRating;
+    setReviewRating(value);
+    setSaving(true);
+
     try {
-      const res = await authPost(`/api/kuppi/${kuppiId}/reviews`, {
-        rating: reviewRating,
-      });
+      const res = await authPost(`/api/kuppi/${kuppiId}/reviews`, { rating: value });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to submit review");
-      if (!data.review) {
-        throw new Error("Failed to submit review");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to submit rating");
+      if (!data.review) throw new Error("Failed to submit rating");
+      data.review.mine = true;
+
       setReviews((prev) => {
         if (data.updated && data.review?._id) {
           const exists = prev.some((r) => r._id === data.review._id);
@@ -86,84 +86,45 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
         }
         return [data.review, ...prev];
       });
-      setReviewRating(null);
-      setMessage(data.updated ? "Review updated." : "Review submitted.");
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Failed to submit review");
+      setReviewRating(previous ?? null);
+      setMessage(error instanceof Error ? error.message : "Failed to submit rating");
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="mt-6 border-t border-blue-100 pt-5">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-base font-semibold text-gray-900">Ratings</h3>
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <div className="flex items-center gap-0.5 text-yellow-500 text-xl">
-            {[1, 2, 3, 4, 5].map((r) => (
-              <span key={r}>{r <= Math.round(averageRating) ? "★" : "☆"}</span>
-            ))}
-          </div>
-          <span className="text-base font-semibold text-gray-700">
-            {averageRating || 0}
-          </span>
-          <span>({reviews.length})</span>
-        </div>
-      </div>
+    <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid #dbeafe" }}>
+      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 1 }}>
+        <Typography variant="subtitle2" fontWeight={700}>Rating</Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Rating value={averageRating} precision={0.1} readOnly size="small" />
+          <Typography variant="body2" color="text.secondary">
+            {averageRating || 0} ({reviews.length})
+          </Typography>
+        </Stack>
+      </Stack>
 
-      {message && (
-        <div className="mb-3 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-md px-3 py-2">
-          {message}
-        </div>
-      )}
+      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ minHeight: 34 }}>
+        <Rating
+          value={reviewRating}
+          onChange={handleRatingChange}
+          max={5}
+          precision={1}
+          disabled={saving}
+          size="medium"
+        />
+        {saving ? <CircularProgress size={16} /> : null}
+      </Stack>
 
-      <form onSubmit={handleSubmit} className="mb-5">
-        <div className="flex flex-row items-center justify-between gap-3 rounded-2xl border border-gray-100 bg-gray-50 px-4 py-3 flex-nowrap">
-          <div className="flex items-center gap-2 min-w-0">
-            <span className="text-sm font-semibold text-gray-700">Rate</span>
-            <div className="flex items-center gap-1">
-              {[1, 2, 3, 4, 5].map((r) => (
-                <button
-                  key={r}
-                  type="button"
-                  onClick={() => setReviewRating(r)}
-                  aria-label={`Rate ${r} out of 5`}
-                  className={`text-2xl leading-none ${
-                    reviewRating !== null && r <= reviewRating
-                      ? "text-yellow-500"
-                      : "text-gray-300"
-                  } hover:text-yellow-500 transition`}
-                >
-                  ★
-                </button>
-              ))}
-            </div>
-            <span className="text-sm text-gray-500 whitespace-nowrap">
-              {reviewRating === null ? "" : `${reviewRating}/5`}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {!user && (
-              <span className="text-sm text-gray-400 whitespace-nowrap">
-                Login required
-              </span>
-            )}
-            <button
-              type="submit"
-              disabled={!user || reviewRating === null}
-              aria-label="Submit rating"
-              className="h-11 w-11 flex items-center justify-center rounded-full bg-indigo-600 text-white text-base font-medium hover:bg-indigo-700 transition disabled:opacity-60 disabled:cursor-not-allowed"
-            >
-              <Send className="h-5 w-5" />
-            </button>
-          </div>
-        </div>
-      </form>
-
-      {loading ? (
-        <p className="text-xs text-gray-500">Loading ratings...</p>
-      ) : reviews.length === 0 ? (
-        <p className="text-xs text-gray-500">No ratings yet.</p>
+      {!user ? (
+        <Typography variant="caption" color="text.secondary">Login required to rate</Typography>
       ) : null}
-    </div>
+
+      {message ? <Alert severity="info" sx={{ mt: 1.5 }}>{message}</Alert> : null}
+
+      {loading ? <Typography variant="caption" color="text.secondary">Loading ratings...</Typography> : null}
+    </Box>
   );
 }

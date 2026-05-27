@@ -3,6 +3,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
+import { Box, Button, Chip, Stack, Typography } from '@mui/material';
 import KuppiCommentsInline from './KuppiCommentsInline';
 import KuppiReviewsInline from './KuppiReviewsInline';
 
@@ -101,11 +102,6 @@ export default function VideoCard({ video, moduleId, isActive, onToggle }: Video
         <div className="flex items-center">
           
           <h2 className="text-lg font-semibold text-gray-800">{video.title}</h2>
-          {video.is_kuppi && (
-            <span className="ml-3 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full">
-              Kuppi
-            </span>
-          )}
         </div>
         <svg 
           className={`w-6 h-6 text-blue-500 transform transition-transform duration-300 ${isActive ? 'rotate-180' : ''}`} 
@@ -130,49 +126,36 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
   const router = useRouter();
 
   return (
-    <motion.div
+    <Box
+      component={motion.div}
       initial={{ opacity: 0, height: 0 }}
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3 }}
-      className="px-6 pb-6 border-t border-blue-100"
+      sx={{ px: 3, pb: 3, borderTop: '1px solid #dbeafe' }}
     >
       {video.description && (
-        <p className="text-gray-600 mt-4 mb-4 text-sm whitespace-pre-line">
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 2, whiteSpace: 'pre-line' }}>
           {video.description}
-        </p>
+        </Typography>
       )}
 
       {video.owner?.name && (
-        <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 rounded-lg">
-          <div className="w-8 h-8 bg-gradient-to-r from-blue-200 to-indigo-200 rounded-full flex items-center justify-center">
+        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2, p: 1.5, bgcolor: '#eff6ff', borderRadius: 1.5 }}>
+          <Box sx={{ width: 32, height: 32, background: 'linear-gradient(to right, #bfdbfe, #c7d2fe)', borderRadius: '999px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-          </div>
-          <div>
-            <p className="font-medium text-gray-800">{video.owner.name}</p>
-          </div>
-        </div>
+          </Box>
+          <Typography fontWeight={600}>{video.owner.name}</Typography>
+        </Stack>
       )}
 
-      <div className="text-sm text-gray-500 mb-4 flex flex-wrap gap-2">
+      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
         {video.language_code && (
-          <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-md">
-            Language: {video.language_code.toUpperCase()}
-          </span>
+          <Chip size="small" label={`Language: ${video.language_code.toUpperCase()}`} color="primary" variant="outlined" />
         )}
-        {video.published_at && (
-          <span className="px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md">
-            Published: {new Date(video.published_at).toLocaleDateString()}
-          </span>
-        )}
-        {video.created_at && (
-          <span className="px-2 py-1 bg-gray-100 text-gray-600 rounded-md">
-            Uploaded: {new Date(video.created_at).toLocaleDateString()}
-          </span>
-        )}
-      </div>
+      </Stack>
 
       <div className="space-y-3">
         {video.youtube_links.map((url, index) => {
@@ -190,7 +173,8 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
 );
           
           return (
-            <motion.button
+            <Button
+              component={motion.button}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               key={`url-${index}`}
@@ -199,7 +183,10 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                   `/module-kuppi/${moduleId}/watch?data=${encodedData}`
                 )
               }
-              className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-sm font-medium rounded-xl text-white bg-red-500 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-300"
+              fullWidth
+              variant="contained"
+              color="error"
+              sx={{ textTransform: 'none', borderRadius: 2, py: 1.2 }}
             >
               <svg
                 className="w-5 h-5 mr-2"
@@ -210,7 +197,7 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                 <path d="M23.498 6.186a2.974 2.974 0 0 0-2.094-2.103C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.404.583a2.974 2.974 0 0 0-2.094 2.103C0 8.09 0 12 0 12s0 3.91.502 5.814a2.974 2.974 0 0 0 2.094 2.103C4.495 20.5 12 20.5 12 20.5s7.505 0 9.404-.583a2.974 2.974 0 0 0 2.094-2.103C24 15.91 24 12 24 12s0-3.91-.502-5.814zM9.75 15.568V8.432L15.818 12 9.75 15.568z" />
               </svg>
               Watch Video From Youtube{video.youtube_links.length > 1 ? ` ${index + 1}` : ""}
-            </motion.button>
+            </Button>
           );
         })}
 
@@ -299,6 +286,6 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
 
       <KuppiReviewsInline kuppiId={String(video.id)} />
       <KuppiCommentsInline kuppiId={String(video.id)} />
-    </motion.div>
+    </Box>
   );
 }
