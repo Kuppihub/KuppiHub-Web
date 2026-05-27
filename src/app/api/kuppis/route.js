@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import supabase from '../../../lib/supabase';
+import supabase from '../../../lib/supabase-admin';
 
 // Helper function to check if user's email domain is allowed
 function canAccessVideo(userEmail, allowedDomains) {

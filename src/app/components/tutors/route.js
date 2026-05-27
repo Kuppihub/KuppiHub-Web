@@ -1,4 +1,4 @@
-import supabase from '../../../lib/supabase';
+import supabase from '../../../lib/supabase-admin';
 
 export async function GET() {
   try {

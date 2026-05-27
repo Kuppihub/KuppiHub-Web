@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import supabase from '@/lib/supabase';
+import supabase from '@/lib/supabase-admin';
 export const dynamic = "force-dynamic";
 
 // GET /api/hierarchy - Fetch the faculty hierarchy JSONB data
