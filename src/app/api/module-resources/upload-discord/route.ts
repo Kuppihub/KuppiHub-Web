@@ -95,11 +95,24 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const isPdf =
-      file.type === "application/pdf" ||
-      file.name.toLowerCase().endsWith(".pdf");
-    if (!isPdf) {
-      return NextResponse.json({ error: "Only PDF files are allowed" }, { status: 400 });
+    const allowedExtensions = [".pdf", ".zip", ".doc", ".docx"];
+    const allowedMimeTypes = [
+      "application/pdf",
+      "application/zip",
+      "application/x-zip-compressed",
+      "application/msword",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    ];
+
+    const fileNameLower = file.name.toLowerCase();
+    const hasAllowedExtension = allowedExtensions.some(ext => fileNameLower.endsWith(ext));
+    const hasAllowedMimeType = allowedMimeTypes.includes(file.type);
+
+    if (!hasAllowedExtension && !hasAllowedMimeType) {
+      return NextResponse.json(
+        { error: "Only PDF, ZIP, and Word Documents are allowed" },
+        { status: 400 }
+      );
     }
 
     let validatedDomains: string[] | null = null;

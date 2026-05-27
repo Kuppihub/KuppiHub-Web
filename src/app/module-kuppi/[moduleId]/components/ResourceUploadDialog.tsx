@@ -226,13 +226,13 @@ export default function ResourceUploadDialog({
               {uploadFile ? `Selected: ${uploadFile.name}` : 'Choose File'}
               <input
                 type="file"
-                accept="application/pdf,.pdf"
+                accept="application/pdf,.pdf,application/zip,.zip,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
                 hidden
                 onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
               />
             </Button>
             <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-              PDF only, max 10 MB
+              PDF, ZIP, Word Docs only, max 10 MB
             </Typography>
 
             {/* Access Restriction Option */}
