@@ -249,10 +249,10 @@ export default function ModuleSelector({
         initial={{ opacity: 0, y: 100 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: 100 }}
-        className="relative bg-white rounded-t-2xl sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden sm:mx-4"
+        className="relative bg-white/20 backdrop-blur-2xl border border-white/45 rounded-t-3xl sm:rounded-3xl shadow-2xl w-full sm:max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-hidden sm:mx-4 saturate-150"
       >
         {/* Header - matching main theme */}
-        <div className="bg-gradient-to-r from-blue-100 via-purple-200 to-blue-500 text-gray-800 px-4 sm:px-6 py-3 sm:py-4">
+        <div className="bg-white/10 backdrop-blur-md border-b border-white/30 text-gray-900 px-4 sm:px-6 py-3 sm:py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 sm:space-x-3">
               {selections.length > 0 && (
@@ -319,10 +319,15 @@ export default function ModuleSelector({
                         key={opt.id}
                         sx={{
                           borderRadius: 3,
-                          boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-                          transition: "all 0.2s ease",
+                          border: "1px solid rgba(255, 255, 255, 0.35)",
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
+                          backdropFilter: "blur(20px)",
+                          boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                          transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
                           "&:hover": {
-                            boxShadow: "0 4px 16px rgba(99, 102, 241, 0.2)",
+                            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
+                            borderColor: "rgba(255, 255, 255, 0.5)",
+                            boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
                             transform: "translateY(-2px)",
                           },
                         }}
@@ -378,7 +383,10 @@ export default function ModuleSelector({
                             key={m.module_id}
                             sx={{
                               borderRadius: 3,
-                              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+                              border: "1px solid rgba(255, 255, 255, 0.35)",
+                              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
+                              backdropFilter: "blur(20px)",
+                              boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
                             }}
                           >
                             <CardContent sx={{ p: 2, "&:last-child": { pb: 2 } }}>
@@ -411,22 +419,31 @@ export default function ModuleSelector({
                                   startIcon={isAdded ? <CheckIcon /> : <AddIcon />}
                                   sx={{
                                     flexShrink: 0,
-                                    borderRadius: 2,
+                                    borderRadius: 999,
                                     textTransform: "none",
-                                    fontWeight: 600,
+                                    fontWeight: 700,
+                                    transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
                                     ...(isAdded
                                       ? {
-                                          borderColor: "#10b981",
-                                          color: "#10b981",
+                                          borderColor: "rgba(16, 185, 129, 0.5)",
+                                          color: "#065f46",
+                                          background: "rgba(16, 185, 129, 0.15)",
+                                          backdropFilter: "blur(4px)",
                                           "&.Mui-disabled": {
                                             borderColor: "#10b981",
                                             color: "#10b981",
                                           },
                                         }
                                       : {
-                                          background: "linear-gradient(to right, #8b5cf6, #6366f1)",
+                                          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
+                                          backdropFilter: "blur(6px)",
+                                          border: "1px solid rgba(255, 255, 255, 0.3)",
+                                          boxShadow: "0 4px 12px rgba(59, 130, 246, 0.15), inset 0 1px 2px rgba(255, 255, 255, 0.35)",
+                                          color: "#ffffff",
                                           "&:hover": {
-                                            background: "linear-gradient(to right, #7c3aed, #4f46e5)",
+                                            background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
+                                            boxShadow: "0 6px 18px rgba(59, 130, 246, 0.25), inset 0 1px 2px rgba(255, 255, 255, 0.45)",
+                                            transform: "scale(1.04) translateY(-1px)",
                                           },
                                         }),
                                   }}

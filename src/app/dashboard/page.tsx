@@ -4,9 +4,27 @@ import { useEffect, useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import HeaderSearch from "../components/HeaderSearch";
+import {
+  Box,
+  Button,
+  Card,
+  CardActionArea,
+  CardContent,
+  Chip,
+  IconButton,
+  LinearProgress,
+  Paper,
+  Stack,
+  Typography,
+} from "@mui/material";
+import AddIcon from "@mui/icons-material/Add";
+import EditIcon from "@mui/icons-material/Edit";
+import CloseIcon from "@mui/icons-material/Close";
+import SchoolIcon from "@mui/icons-material/School";
 import ModuleSelector from "../components/ModuleSelector";
 import { useAuth } from "@/contexts/AuthContext";
+import { checkAndManageCacheExpiration } from "@/lib/cache-utils";
+
 
 interface ModuleData {
   module_id: number;
@@ -17,6 +35,10 @@ interface ModuleData {
   video_count?: number;
 }
 
+interface DashboardCachePayload {
+  modules: ModuleData[];
+}
+
 export default function DashboardPage() {
   const router = useRouter();
   const { user, loading: authLoading, signInWithGoogle } = useAuth();
@@ -24,6 +46,7 @@ export default function DashboardPage() {
   const [editMode, setEditMode] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const dashboardCacheKey = `dashboard-cache:${user?.uid ?? "guest"}`;
 
   // Ensure user exists in Supabase before syncing dashboard
   const ensureUserExists = useCallback(async (): Promise<boolean> => {
@@ -142,6 +165,20 @@ export default function DashboardPage() {
     if (typeof window === "undefined" || authLoading) return;
 
     const initializeModules = async () => {
+      checkAndManageCacheExpiration();
+      const cachedRaw = sessionStorage.getItem(dashboardCacheKey);
+      if (cachedRaw) {
+        try {
+          const cached = JSON.parse(cachedRaw) as DashboardCachePayload;
+          if (Array.isArray(cached.modules)) {
+            setModules(cached.modules);
+            return;
+          }
+        } catch {
+          sessionStorage.removeItem(dashboardCacheKey);
+        }
+      }
+
       if (user?.uid) {
         // User is logged in - load from database only
         const cloudModuleIds = await loadFromCloud();
@@ -153,17 +190,33 @@ export default function DashboardPage() {
           if (freshModules.length > 0) {
             setModules(freshModules);
             saveModulesToLocal(freshModules);
+            sessionStorage.setItem(
+              dashboardCacheKey,
+              JSON.stringify({ modules: freshModules } satisfies DashboardCachePayload)
+            );
           } else {
             setModules([]);
+            sessionStorage.setItem(
+              dashboardCacheKey,
+              JSON.stringify({ modules: [] } satisfies DashboardCachePayload)
+            );
           }
         } else {
           // No modules in database for this user
           setModules([]);
+          sessionStorage.setItem(
+            dashboardCacheKey,
+            JSON.stringify({ modules: [] } satisfies DashboardCachePayload)
+          );
         }
       } else {
         // Not logged in - use local storage only
         const localModules = loadModulesFromLocal();
         setModules(localModules);
+        sessionStorage.setItem(
+          dashboardCacheKey,
+          JSON.stringify({ modules: localModules } satisfies DashboardCachePayload)
+        );
         if (localModules.length > 0) {
           refreshModuleCounts(localModules);
         }
@@ -171,7 +224,7 @@ export default function DashboardPage() {
     };
 
     initializeModules();
-  }, [user, authLoading, loadFromCloud, loadModulesFromLocal, fetchModuleDetails, saveModulesToLocal]);
+  }, [user, authLoading, loadFromCloud, loadModulesFromLocal, fetchModuleDetails, saveModulesToLocal, dashboardCacheKey]);
 
   // Listen for updates from HeaderSearch
   useEffect(() => {
@@ -180,6 +233,10 @@ export default function DashboardPage() {
     const handleUpdate = async () => {
       const parsed = loadModulesFromLocal();
       setModules(parsed);
+      sessionStorage.setItem(
+        dashboardCacheKey,
+        JSON.stringify({ modules: parsed } satisfies DashboardCachePayload)
+      );
       
       // Sync to cloud if logged in
       if (user?.uid && parsed.length > 0) {
@@ -192,7 +249,7 @@ export default function DashboardPage() {
     return () => {
       window.removeEventListener("dashboardModulesUpdated", handleUpdate);
     };
-  }, [user?.uid, loadModulesFromLocal, syncToCloud]);
+  }, [user?.uid, loadModulesFromLocal, syncToCloud, dashboardCacheKey]);
 
   // Fetch fresh video counts for dashboard modules
   const refreshModuleCounts = async (currentModules: ModuleData[]) => {
@@ -212,6 +269,10 @@ export default function DashboardPage() {
 
       setModules(updated);
       saveModulesToLocal(updated);
+      sessionStorage.setItem(
+        dashboardCacheKey,
+        JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
+      );
     } catch (err) {
       console.error("Failed to refresh module counts", err);
     }
@@ -228,6 +289,10 @@ export default function DashboardPage() {
     const updated = modules.filter((m) => m.module_id !== moduleId);
     setModules(updated);
     saveModulesToLocal(updated);
+    sessionStorage.setItem(
+      dashboardCacheKey,
+      JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
+    );
     
     // Sync to cloud if logged in
     if (user?.uid) {
@@ -277,6 +342,10 @@ export default function DashboardPage() {
     const updated = [...currentModules, newModule];
     setModules(updated);
     saveModulesToLocal(updated);
+    sessionStorage.setItem(
+      dashboardCacheKey,
+      JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
+    );
 
     // Sync to cloud if logged in
     if (user?.uid) {
@@ -286,6 +355,7 @@ export default function DashboardPage() {
 
   // Get set of added module IDs for the selector
   const addedModuleIds = new Set((modules || []).map(m => m.module_id));
+  const totalVideos = (modules || []).reduce((sum, module) => sum + (module.video_count || 0), 0);
 
   if (modules === null) {
     return (
@@ -298,121 +368,290 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen py-6 sm:py-12 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto">
-        {/* Mobile-optimized header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-          <div>
-            <h1 className="text-2xl sm:text-4xl font-bold mb-1">
-              <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Dashboard</span>
-            </h1>
-            <p className="text-sm sm:text-lg text-gray-700">Modules you've added to your dashboard</p>
-          </div>
-          <div className="flex items-center gap-2 sm:space-x-3 flex-wrap sm:flex-nowrap">
-            <button
-              onClick={() => setSelectorOpen(true)}
-              className="px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all duration-200 flex items-center space-x-1 sm:space-x-2"
-            >
-              <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span className="hidden xs:inline">Add Modules</span>
-              <span className="xs:hidden">Add</span>
-            </button>
-            <HeaderSearch />
-            {modules.length > 0 && (
-              <button
-                onClick={toggleEditMode}
-                className={`px-3 sm:px-4 py-2 rounded-full text-sm sm:text-base font-semibold transition-all duration-200 ${
-                  editMode
-                    ? 'bg-green-600 text-white hover:bg-green-700'
-                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-100'
-                }`}
+        <Paper
+          elevation={0}
+          sx={{
+            mb: 3,
+            p: { xs: 2, sm: 3 },
+            borderRadius: 4,
+            border: "1px solid rgba(255, 255, 255, 0.4)",
+            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15))",
+            backdropFilter: "blur(20px) saturate(160%)",
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+          }}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-4xl font-bold mb-1">
+                <span className="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Dashboard</span>
+              </h1>
+              
+            </div>
+            <div className="flex items-center justify-end gap-2 sm:gap-3">
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                onClick={() => setSelectorOpen(true)}
+                sx={{
+                  borderRadius: 999,
+                  px: 3,
+                  py: 1,
+                  textTransform: "none",
+                  fontWeight: 700,
+                  background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
+                  backdropFilter: "blur(8px)",
+                  border: "1px solid rgba(255, 255, 255, 0.3)",
+                  boxShadow: "0 8px 24px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
+                  transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                  "&:hover": {
+                    background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
+                    boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                    transform: "scale(1.04) translateY(-1px)",
+                  },
+                  "&:active": {
+                    transform: "scale(0.96)",
+                  }
+                }}
               >
-                {editMode ? 'Done' : 'Edit'}
-              </button>
-            )}
+                Add Modules
+              </Button>
+              {modules.length > 0 && (
+                <Button
+                  variant={editMode ? "contained" : "outlined"}
+                  color={editMode ? "success" : "inherit"}
+                  startIcon={editMode ? undefined : <EditIcon />}
+                  onClick={toggleEditMode}
+                  sx={{
+                    borderRadius: 999,
+                    px: 3,
+                    py: 1,
+                    textTransform: "none",
+                    fontWeight: 700,
+                    ...(editMode ? {
+                      background: "linear-gradient(135deg, rgba(34, 197, 94, 0.8), rgba(21, 128, 61, 0.8))",
+                      border: "1px solid rgba(255, 255, 255, 0.3)",
+                      boxShadow: "0 8px 24px rgba(34, 197, 94, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
+                    } : {
+                      background: "rgba(255, 255, 255, 0.15)",
+                      backdropFilter: "blur(10px)",
+                      border: "1px solid rgba(255, 255, 255, 0.35)",
+                      boxShadow: "0 4px 16px rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                      color: "#1e3a8a",
+                    }),
+                    transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                    "&:hover": {
+                      ...(editMode ? {
+                        background: "linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(21, 128, 61, 0.95))",
+                        boxShadow: "0 12px 32px rgba(34, 197, 94, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                      } : {
+                        background: "rgba(255, 255, 255, 0.3)",
+                        border: "1px solid rgba(255, 255, 255, 0.55)",
+                        boxShadow: "0 8px 24px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.35)",
+                      }),
+                      transform: "scale(1.04) translateY(-1px)",
+                    },
+                    "&:active": {
+                      transform: "scale(0.96)",
+                    }
+                  }}
+                >
+                  {editMode ? 'Done' : 'Edit'}
+                </Button>
+              )}
+            </div>
           </div>
-        </div>
+      
+          {syncing ? <LinearProgress sx={{ mt: 2, borderRadius: 999 }} /> : null}
+        </Paper>
 
         {modules.length === 0 ? (
-          <motion.div
+          <Paper
             initial={{ opacity: 0, scale: 0.95 }}
+            component={motion.div}
             animate={{ opacity: 1, scale: 1 }}
-            className="text-center py-8 sm:py-12 px-4 sm:px-6 bg-white rounded-2xl shadow-lg border border-blue-100"
+            sx={{
+              textAlign: "center",
+              py: 6,
+              px: 3,
+              borderRadius: 4,
+              border: "1px solid rgba(255, 255, 255, 0.4)",
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15))",
+              backdropFilter: "blur(20px) saturate(160%)",
+              boxShadow: "0 10px 30px rgba(31, 38, 135, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+            }}
           >
-            <svg className="w-12 h-12 sm:w-16 sm:h-16 text-blue-400 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-            </svg>
-            <h3 className="mt-2 text-lg sm:text-xl font-semibold text-gray-800">No modules in your dashboard</h3>
-            <p className="mt-1 text-sm sm:text-base text-gray-600">Tap "Add Modules" to get started.</p>
-            <button
+            <SchoolIcon sx={{ fontSize: 56, color: "primary.main", mb: 1.5 }} />
+            <Typography variant="h6" fontWeight={700} color="text.primary">
+              No modules in your dashboard
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              Tap Add Modules to get started.
+            </Typography>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
               onClick={() => setSelectorOpen(true)}
-              className="mt-4 px-6 py-3 rounded-full font-semibold bg-blue-600 text-white hover:bg-blue-700 transition-all"
+              sx={{
+                mt: 3,
+                borderRadius: 999,
+                px: 4,
+                py: 1.2,
+                textTransform: "none",
+                fontWeight: 700,
+                background: "linear-gradient(135deg, rgba(59, 130, 246, 0.85), rgba(99, 102, 241, 0.85))",
+                backdropFilter: "blur(8px)",
+                border: "1px solid rgba(255, 255, 255, 0.3)",
+                boxShadow: "0 8px 24px rgba(59, 130, 246, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
+                transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
+                  boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                  transform: "scale(1.04) translateY(-1px)",
+                },
+                "&:active": {
+                  transform: "scale(0.96)",
+                }
+              }}
             >
-              + Add Your First Module
-            </button>
-          </motion.div>
+              Add Your First Module
+            </Button>
+          </Paper>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8">
+          <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {modules.map((m, i) => (
               <motion.div
                 key={m.module_id}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                onClick={() => {
-                  if (editMode) {
-                    removeModule(m.module_id);
-                    return;
-                  }
-                  handleModuleClick(m.module_id);
-                }}
-                className={`bg-white rounded-xl sm:rounded-2xl shadow-md p-4 sm:p-6 border cursor-pointer hover:shadow-xl transition-all duration-300 group ${
-                  editMode ? 'border-red-200 hover:scale-100' : 'border-blue-50 active:scale-[0.98] sm:hover:scale-105'
-                }`}
+                transition={{ delay: i * 0.04 }}
               >
-                <div className="flex justify-between items-start mb-3 sm:mb-4">
-                  <div className={`w-10 h-10 sm:w-14 sm:h-14 rounded-lg sm:rounded-xl flex items-center justify-center transition-all ${
-                    editMode 
-                      ? 'bg-red-50' 
-                      : 'bg-gradient-to-r from-blue-100 to-indigo-100 group-hover:from-blue-200 group-hover:to-indigo-200'
-                  }`}>
-                    <svg className={`w-5 h-5 sm:w-7 sm:h-7 ${editMode ? 'text-red-500' : 'text-blue-600'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                  </div>
-                  {editMode && (
-                    <button
-                      onClick={(e) => handleRemoveModule(e, m.module_id)}
-                      className="p-2 text-red-500 hover:text-white hover:bg-red-500 rounded-full transition-all"
-                      title="Remove from dashboard"
-                    >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                      </svg>
-                    </button>
-                  )}
-                </div>
-                <h2 className={`text-base sm:text-xl font-semibold mb-1 sm:mb-2 transition-colors line-clamp-2 ${
-                  editMode ? 'text-gray-800' : 'text-gray-800 group-hover:text-blue-600'
-                }`}>{m.module.code} - {m.module.name}</h2>
-                <p className="text-gray-600 text-xs sm:text-sm line-clamp-2 sm:line-clamp-3 mb-3 sm:mb-4">{m.module.description}</p>
-                <div className="flex justify-between items-center">
-                  <div className="text-xs text-gray-500">
-                    <span className="font-semibold text-blue-600">{m.video_count || 0}</span> video{m.video_count !== 1 ? 's' : ''}
-                  </div>
-                  {!editMode && (
-                    <span className="text-blue-600 text-xs sm:text-sm font-medium group-hover:text-indigo-700 flex items-center">
-                      View
-                      <svg className="w-3 h-3 sm:w-4 sm:h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </span>
-                  )}
-                  {editMode && <span className="text-red-500 text-xs sm:text-sm font-medium">Tap to remove</span>}
-                </div>
+                <Card
+                  variant="outlined"
+                  sx={{
+                    height: "100%",
+                    borderRadius: 4,
+                    border: "1px solid rgba(255, 255, 255, 0.4)",
+                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.12))",
+                    backdropFilter: "blur(20px) saturate(160%)",
+                    boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+                    overflow: "hidden",
+                    transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+                    "&:hover": editMode
+                      ? {}
+                      : {
+                          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.18))",
+                          borderColor: "rgba(255, 255, 255, 0.55)",
+                          boxShadow: "0 12px 40px 0 rgba(31, 38, 135, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
+                          transform: "translateY(-4px) scale(1.01)",
+                        },
+                  }}
+                >
+                  <CardActionArea
+                    onClick={() => {
+                      if (editMode) {
+                        removeModule(m.module_id);
+                        return;
+                      }
+                      handleModuleClick(m.module_id);
+                    }}
+                    sx={{ height: "100%", alignItems: "stretch" }}
+                  >
+                    <CardContent sx={{ p: 2.5, display: "flex", flexDirection: "column", height: "100%" }}>
+                      <Stack direction="row" alignItems="flex-start" justifyContent="space-between" spacing={2}>
+                        <Box
+                          sx={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 3,
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            bgcolor: editMode ? "rgba(239, 68, 68, 0.15)" : "rgba(59, 130, 246, 0.15)",
+                            color: editMode ? "#dc2626" : "#1d4ed8",
+                            border: "1px solid",
+                            borderColor: editMode ? "rgba(239, 68, 68, 0.25)" : "rgba(59, 130, 246, 0.25)",
+                            boxShadow: "inset 0 1px 1px rgba(255, 255, 255, 0.4)",
+                            backdropFilter: "blur(4px)",
+                            flexShrink: 0,
+                          }}
+                        >
+                          <SchoolIcon />
+                        </Box>
+
+                        {editMode ? (
+                          <IconButton
+                            component="span"
+                            aria-label="remove module"
+                            onClick={(e) => handleRemoveModule(e, m.module_id)}
+                            size="small"
+                            sx={{ color: "error.main" }}
+                          >
+                            <CloseIcon />
+                          </IconButton>
+                        ) : (
+                          <Chip
+                            label={`${m.video_count || 0} videos`}
+                            size="small"
+                            color="primary"
+                            variant="outlined"
+                            sx={{ fontWeight: 700 }}
+                          />
+                        )}
+                      </Stack>
+
+                      <Box sx={{ flex: 1, minHeight: 0 }}>
+                        <Typography
+                          variant="h6"
+                          sx={{
+                            mt: 2,
+                            fontWeight: 800,
+                            lineHeight: 1.2,
+                            color: "text.primary",
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {m.module.code} - {m.module.name}
+                        </Typography>
+
+                        <Typography
+                          variant="body2"
+                          color="text.secondary"
+                          sx={{
+                            mt: 1,
+                            minHeight: 48,
+                            display: "-webkit-box",
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: "vertical",
+                            overflow: "hidden",
+                          }}
+                        >
+                          {m.module.description}
+                        </Typography>
+                      </Box>
+
+                      <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: 2 }}>
+                        <Typography variant="caption" color="text.secondary">
+                          {m.video_count || 0} video{m.video_count !== 1 ? "s" : ""}
+                        </Typography>
+                        {!editMode ? (
+                          <Typography variant="caption" color="primary.main" fontWeight={700}>
+                            View
+                          </Typography>
+                        ) : (
+                          <Typography variant="caption" color="error.main" fontWeight={700}>
+                            Tap to remove
+                          </Typography>
+                        )}
+                      </Stack>
+                    </CardContent>
+                  </CardActionArea>
+                </Card>
               </motion.div>
             ))}
-          </div>
+          </Box>
         )}
       </div>
 

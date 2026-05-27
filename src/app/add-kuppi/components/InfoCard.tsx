@@ -40,7 +40,7 @@ export default function InfoCard() {
       transition={{ delay: 0.1 }}
       className="mb-4 sm:mb-6"
     >
-      <div className="bg-white rounded-2xl border border-blue-100 shadow-sm px-4 sm:px-6 py-4 sm:py-5">
+      <div className="bg-white/25 backdrop-blur-xl border border-white/40 shadow-xl px-4 sm:px-6 py-4 sm:py-5 rounded-2xl saturate-150">
         <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4 md:gap-0 max-w-2xl mx-auto">
           {steps.map((step, index) => (
             <div key={step.title} className="contents">
@@ -51,18 +51,18 @@ export default function InfoCard() {
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label="Open @KuppiHubBot on Telegram"
-                    className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 border-2 border-blue-200 flex items-center justify-center flex-shrink-0 hover:bg-blue-200 hover:border-blue-300 transition"
+                    className="w-12 h-12 rounded-full bg-white/30 text-blue-950 border border-white/40 flex items-center justify-center flex-shrink-0 hover:bg-white/40 hover:border-white/50 transition-all duration-300 shadow-sm backdrop-blur-md"
                   >
                     {step.icon}
                   </a>
                 ) : (
-                  <div className="w-12 h-12 rounded-full bg-blue-100 text-blue-600 border-2 border-blue-200 flex items-center justify-center flex-shrink-0">
+                  <div className="w-12 h-12 rounded-full bg-white/30 text-blue-950 border border-white/40 flex items-center justify-center flex-shrink-0 shadow-sm backdrop-blur-md">
                     {step.icon}
                   </div>
                 )}
                 <div>
-                  <p className="text-sm font-semibold text-blue-700">{step.title}</p>
-                  <p className="text-[11px] text-slate-500 leading-relaxed mt-0.5 md:max-w-[150px]">
+                  <p className="text-sm font-bold text-blue-955">{step.title}</p>
+                  <p className="text-[11px] text-slate-800 leading-relaxed mt-0.5 md:max-w-[150px]">
                     {index === 0 ? (
                       <>
                         {step.description}{" "}
@@ -70,7 +70,7 @@ export default function InfoCard() {
                           href="https://t.me/KuppihubBot"
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-700 underline font-semibold hover:text-blue-800"
+                          className="text-blue-955 underline font-bold hover:text-blue-900"
                         >
                           @KuppiHubBot
                         </a>{" "}
@@ -83,7 +83,7 @@ export default function InfoCard() {
                 </div>
               </div>
               {index < steps.length - 1 && (
-                <div className="hidden md:block w-12 h-px bg-blue-200 self-start mt-6 mx-3" />
+                <div className="hidden md:block w-12 h-px bg-white/40 self-start mt-6 mx-3" />
               )}
             </div>
           ))}

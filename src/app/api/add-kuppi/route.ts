@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import supabase from "@/lib/supabase";
 import supabaseAdmin from "@/lib/supabase-admin";
 import { authenticateRequest } from "@/lib/firebase-admin";
 import {
@@ -67,6 +66,42 @@ async function findOrCreateStudent(indexNo: string): Promise<number | null> {
   return newStudent?.id || null;
 }
 
+// Helper function to find or create student by name
+async function findOrCreateStudentByName(name: string): Promise<number | null> {
+  const trimmedName = name.trim();
+  if (!trimmedName) return null;
+
+  // First, try to find an existing student by name (case-insensitive)
+  const { data: existingStudent } = await supabaseAdmin
+    .from("students")
+    .select("id")
+    .ilike("name", trimmedName)
+    .limit(1);
+
+  if (existingStudent && existingStudent.length > 0) {
+    return existingStudent[0].id;
+  }
+
+  // If not found, create a new student with a unique temporary index number
+  const tempIndexNo = `TEMP-${Math.random().toString(36).substring(2, 9).toUpperCase()}`;
+  const { data: newStudent, error } = await supabaseAdmin
+    .from("students")
+    .insert({
+      name: trimmedName,
+      index_no: tempIndexNo,
+      approved: false,
+    })
+    .select("id")
+    .single();
+
+  if (error) {
+    console.error("Error creating student by name:", error);
+    return null;
+  }
+
+  return newStudent?.id || null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     // ============ SERVER-SIDE AUTHENTICATION ============
@@ -103,6 +138,8 @@ export async function POST(request: NextRequest) {
       onedrive_cloud_video_urls,
       material_urls,
       allowed_domains,
+      student_id: bodyStudentId,
+      student_name: bodyStudentName,
     } = body;
 
     // ============ INPUT VALIDATION ============
@@ -165,9 +202,13 @@ export async function POST(request: NextRequest) {
       validatedIndexNo = validateIndexNo(index_no);
     }
 
-    // Find or create student by validated index_no if provided
+    // Determine student ID
     let student_id = null;
-    if (validatedIndexNo) {
+    if (bodyStudentId && typeof bodyStudentId === "number") {
+      student_id = bodyStudentId;
+    } else if (bodyStudentName && typeof bodyStudentName === "string" && bodyStudentName.trim()) {
+      student_id = await findOrCreateStudentByName(bodyStudentName);
+    } else if (validatedIndexNo) {
       student_id = await findOrCreateStudent(validatedIndexNo);
     }
 

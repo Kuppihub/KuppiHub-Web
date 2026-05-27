@@ -1,4 +1,3 @@
-// src/components/Preloader.jsx
 import React from 'react';
 
 export default function Preloader() {

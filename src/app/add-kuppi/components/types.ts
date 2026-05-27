@@ -23,7 +23,8 @@ export interface FormData {
   title: string;
   description: string;
   languageCode: string;
-  indexNo: string;
+  studentName: string;
+  studentId: number | null;
   isKuppi: boolean;
   youtubeLinks: LinkItem[];
   telegramLinks: LinkItem[];
@@ -45,7 +46,8 @@ export const initialFormData: FormData = {
   title: "",
   description: "",
   languageCode: "si",
-  indexNo: "",
+  studentName: "",
+  studentId: null,
   isKuppi: true,
   youtubeLinks: [{ id: generateId(), url: "" }],
   telegramLinks: [],
