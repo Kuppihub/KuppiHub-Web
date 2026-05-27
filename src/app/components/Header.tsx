@@ -21,7 +21,7 @@ export default function Header() {
   );
 
   return (
-    <header className="bg-white/15 backdrop-blur-xl border-b border-white/25 text-white sticky top-0 z-50 shadow-sm saturate-150">
+    <header className="bg-gradient-to-r from-[#bfdbfe]/90 via-[#c4b5fd]/90 to-[#3b82f6]/90 sm:bg-none sm:bg-white/15 backdrop-blur-xl border-b border-white/25 text-white sticky top-0 z-50 shadow-sm saturate-150">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-16 gap-4">
           {/* Logo */}
@@ -164,56 +164,50 @@ export default function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setIsMenuOpen(!isMenuOpen)}
-            className="sm:hidden p-2 rounded-md text-blue-800 hover:text-white hover:bg-blue-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="sm:hidden ml-auto p-2 rounded-md text-blue-800 hover:text-white hover:bg-blue-600 transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+            aria-label="Toggle menu"
           >
-            <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d={isMenuOpen ? 'M6 18L18 6M6 6l12 12' : 'M4 6h16M4 12h16M4 18h16'}
-              />
-            </svg>
+            {isMenuOpen ? (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
           </button>
-        </div>
-
-        {/* Mobile top search bar */}
-        <div className="sm:hidden pb-3">
-          <HeaderSearch />
         </div>
 
         {/* Mobile Menu */}
         <div
-          className={`sm:hidden bg-white border-t border-gray-500 shadow-xl overflow-hidden transform ease-in-out 
-                      transition-all duration-1000
-                      ${isMenuOpen ? 'max-h-[1000px] opacity-100 scale-100 delay-0' : 'max-h-0 opacity-0 scale-95 delay-0'}`}
+          className={`sm:hidden bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-2xl border-t border-white/40 shadow-2xl overflow-hidden transform ease-in-out 
+                      transition-all duration-300
+                      ${isMenuOpen ? 'max-h-[1000px] opacity-100 scale-100' : 'max-h-0 opacity-0 scale-95'}`}
         >
-          
-          <div className="p-4 space-y-4 transition-opacity duration-500">
+          <div className="p-4 space-y-4 transition-opacity duration-300">
+            {/* Search component inside mobile menu */}
+            <div className="pt-2 pb-1">
+              <HeaderSearch />
+            </div>
+
             {['Dashboard', 'Tutors', 'Add-Kuppi'].map((item, i) => (
               <Link
                 key={i}
                 href={`/${item.toLowerCase()}`}
                 onClick={() => setIsMenuOpen(false)}
-                className="block text-blue-800 font-semibold border border-blue-200 rounded-lg px-4 py-2 
-                           hover:bg-blue-600 hover:text-white transition-all duration-300 ease-in-out transform hover:scale-105"
+                className="block text-center text-blue-900 font-bold bg-blue-50/50 border border-blue-100/80 rounded-full px-5 py-2.5 
+                           hover:bg-blue-100 hover:text-blue-950 hover:shadow-md hover:border-blue-200 transition-all duration-300 ease-in-out transform hover:scale-102 active:scale-98 shadow-sm"
               >
                 {item === 'Add-Kuppi' ? 'Add Kuppi' : item}
               </Link>
             ))}
 
-            {/* Placeholder for mobile search (can be added later) */}
-               
-            <div className="mt-2">
-             
-              {/* Mobile search component will be added here later */}
-            </div>
-
             {/* Mobile Auth Button */}
             {loading ? (
-              <div className="w-full h-10 rounded-lg bg-gray-200 animate-pulse"></div>
+              <div className="w-full h-11 rounded-full bg-gray-200 animate-pulse"></div>
             ) : user ? (
-              <div className="flex items-center justify-between border border-red-200 rounded-lg px-4 py-2">
+              <div className="flex items-center justify-between border border-red-100 bg-red-50/30 backdrop-blur-md rounded-full px-5 py-2 shadow-sm">
                 <div className="flex items-center space-x-3">
                   <div className="relative">
                     {user.photoURL ? (
@@ -222,10 +216,10 @@ export default function Header() {
                         alt={user.displayName || 'User'}
                         width={32}
                         height={32}
-                        className="rounded-full"
+                        className="rounded-full border border-white"
                       />
                     ) : (
-                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm">
+                      <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center text-white font-semibold text-sm border border-white">
                         {user.displayName?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase() || 'U'}
                       </div>
                     )}
@@ -233,7 +227,7 @@ export default function Header() {
                   </div>
                   <div className="flex flex-col">
                     <div className="flex items-center gap-1.5">
-                      <span className="text-gray-700 text-sm truncate max-w-[120px]">{user.displayName || user.email}</span>
+                      <span className="text-gray-800 text-sm font-semibold truncate max-w-[120px]">{user.displayName || user.email}</span>
                       {supabaseUser?.is_approved_for_kuppies && (
                         <span className="inline-flex items-center px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
                           <svg className="w-2.5 h-2.5" fill="currentColor" viewBox="0 0 20 20">
@@ -246,7 +240,7 @@ export default function Header() {
                 </div>
                 <button
                   onClick={() => { signOut(); setIsMenuOpen(false); }}
-                  className="text-red-600 font-semibold text-sm hover:text-red-800"
+                  className="text-red-600 font-bold text-sm hover:text-red-800 px-3 py-1.5 rounded-full hover:bg-red-100/50 transition-colors duration-300"
                 >
                   Logout
                 </button>
@@ -255,10 +249,10 @@ export default function Header() {
               <Link
                 href="/login"
                 onClick={() => setIsMenuOpen(false)}
-                className="w-full flex items-center justify-center space-x-2 text-green-700 font-semibold border border-green-200 rounded-lg px-4 py-2 
-                           hover:bg-green-600 hover:text-white transition-all duration-300"
+                className="w-full flex items-center justify-center space-x-2 text-green-800 font-bold bg-green-50/50 border border-green-100/80 rounded-full px-5 py-2.5 
+                           hover:bg-green-100 hover:text-green-900 transition-all duration-300 hover:scale-102 active:scale-98 shadow-sm"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 text-green-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
                 <span>Login</span>

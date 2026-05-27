@@ -217,34 +217,39 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
       <div key={comment._id} className={isReply ? "ml-8" : undefined}>
         <div
           className={[
-            "rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 border shadow-sm transition-shadow",
-            isReply ? "bg-gray-50/60 border-gray-100" : "bg-white border-gray-50",
-            "hover:shadow-md",
+            "rounded-[1.5rem] sm:rounded-[2rem] p-4 sm:p-6 border transition-all duration-300 shadow-sm",
+            isReply 
+              ? "bg-white/20 border-white/20 hover:bg-white/25 hover:border-white/25" 
+              : "bg-white/35 border border-white/30 hover:bg-white/45 hover:border-white/35 hover:shadow-md",
+            "backdrop-blur-md"
           ].join(" ")}
         >
-          <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-50">
+          <div className="flex justify-between items-center mb-4 pb-4 border-b border-gray-100">
             <div>
-              <p className="text-gray-400 text-[10px]">
-                {new Date(comment.createdAt).toLocaleDateString()}
+              <p className="text-gray-800 font-semibold text-sm sm:text-base flex items-center gap-2">
+                {comment.userName}
+                <span className="text-gray-400 text-xs font-normal">
+                  ({new Date(comment.createdAt).toLocaleDateString()})
+                </span>
               </p>
             </div>
-            <div className="flex items-center gap-1 bg-gray-50 rounded-lg px-2 py-1">
+            <div className="flex items-center gap-1.5 bg-white/30 border border-white/40 rounded-lg px-2.5 py-1">
               <button
                 type="button"
                 onClick={() => handleVote(comment._id, 1)}
-                className={`p-1 transition-colors ${
-                  comment.likedByMe ? "text-rose-500" : "text-gray-400 hover:text-rose-500"
+                className={`p-0.5 text-sm transition-colors ${
+                  comment.likedByMe ? "text-rose-500 scale-110" : "text-gray-400 hover:text-rose-400 hover:scale-110"
                 }`}
                 aria-label="Love"
               >
                 ♥
               </button>
-              <span className="text-gray-700 text-[10px] font-bold px-1">
+              <span className="text-gray-700 text-xs font-bold px-1">
                 {comment.score || 0}
               </span>
             </div>
           </div>
-          <p className="text-gray-600 text-sm leading-relaxed mb-4">{comment.body}</p>
+          <p className="text-gray-600 text-sm sm:text-base leading-relaxed mb-4">{comment.body}</p>
           <div className="flex items-center gap-4">
             <button
               type="button"
@@ -256,7 +261,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
                 setReplyToId((prev) => (prev === comment._id ? null : comment._id));
                 setReplyBody("");
               }}
-              className="flex items-center gap-1.5 text-gray-400 text-xs font-bold hover:text-indigo-600 transition-colors"
+              className="flex items-center gap-1.5 text-gray-500 text-xs font-bold hover:text-blue-600 transition-colors"
             >
               Reply
             </button>
@@ -264,7 +269,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
               <button
                 type="button"
                 onClick={() => handleDelete(comment._id)}
-                className="flex items-center gap-1.5 text-gray-400 text-xs font-bold hover:text-rose-500 transition-colors"
+                className="flex items-center gap-1.5 text-gray-500 text-xs font-bold hover:text-rose-500 transition-colors"
               >
                 Delete
               </button>
@@ -275,43 +280,45 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
         {replyToId === comment._id && (
           <form
             onSubmit={(e) => handleReplySubmit(e, comment._id)}
-            className="mt-2 space-y-2"
+            className="mt-3.5 space-y-2.5 p-4 bg-white/20 border border-white/30 rounded-2xl backdrop-blur-md"
           >
             <textarea
               placeholder={`Reply to ${comment.userName}`}
               value={replyBody}
               onChange={(e) => setReplyBody(e.target.value)}
               maxLength={MAX_COMMENT_LENGTH}
-              className="w-full border border-gray-100 rounded-3xl px-4 py-3 text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200"
+              className="w-full border border-white/30 rounded-xl px-4 py-3 text-sm bg-white/10 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white/25 transition-all duration-300"
               rows={2}
               required
             />
-            <div className="text-right text-xs text-gray-400">
-              {replyBody.length}/{MAX_COMMENT_LENGTH}
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="submit"
-                className="px-4 py-1.5 rounded-full bg-indigo-600 text-white text-sm hover:bg-indigo-700 transition shadow-lg shadow-indigo-100 active:scale-95"
-              >
-                Post reply
-              </button>
-              <button
-                type="button"
-                onClick={() => {
-                  setReplyToId(null);
-                  setReplyBody("");
-                }}
-                className="text-xs text-gray-400"
-              >
-                Cancel
-              </button>
+            <div className="flex items-center justify-between">
+              <span className="text-xs text-gray-400">
+                {replyBody.length}/{MAX_COMMENT_LENGTH}
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  type="submit"
+                  className="px-4 py-1.5 rounded-full bg-blue-500/20 border border-blue-500/35 hover:bg-blue-500/35 text-blue-900 text-xs font-bold transition shadow-sm hover:scale-105 active:scale-95 cursor-pointer"
+                >
+                  Post reply
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setReplyToId(null);
+                    setReplyBody("");
+                  }}
+                  className="text-xs text-gray-400 hover:text-gray-600 transition-colors font-medium cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
             </div>
           </form>
         )}
 
         {commentChildren.length > 0 && (
-          <div className="mt-3 space-y-3">
+          <div className="mt-3.5 space-y-3.5">
             {commentChildren.map((child) => renderComment(child, depth + 1))}
           </div>
         )}
@@ -321,8 +328,9 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-xl shadow-md p-6">
-        <p className="text-gray-600">Loading reviews and discussion...</p>
+      <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-6 shadow-lg saturate-150 flex items-center justify-center gap-3">
+        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+        <p className="text-gray-600 font-medium">Loading reviews and discussion...</p>
       </div>
     );
   }
@@ -330,22 +338,22 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
   return (
     <div className="space-y-6">
       {message && (
-        <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 text-xs font-semibold px-4 py-2 rounded-full border border-indigo-100">
-          <span className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+        <div className="inline-flex items-center gap-2 bg-blue-500/10 text-blue-800 text-xs font-semibold px-4 py-2 rounded-full border border-blue-500/20">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-500" />
           {message}
         </div>
       )}
 
-      <section className="bg-white rounded-2xl shadow-md p-4 sm:p-5">
-        <div className="border-b border-gray-100 pb-4">
+      <section className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-2xl p-5 shadow-lg saturate-150">
+        <div className="border-b border-gray-150 pb-4">
           <div className="flex flex-wrap items-center gap-3">
             <h2 className="text-lg font-semibold text-gray-900">Reviews</h2>
-            <div className="flex items-center gap-1 text-yellow-500 text-lg">
+            <div className="flex items-center gap-1 text-amber-500 text-lg">
               {Array.from({ length: 5 }).map((_, idx) => (
                 <span key={idx}>{idx < Math.round(averageRating) ? "★" : "☆"}</span>
               ))}
             </div>
-            <span className="text-sm font-semibold text-gray-800">
+            <span className="text-sm font-bold text-gray-800">
               {averageRating || 0}
             </span>
             <span className="text-sm text-gray-500">
@@ -363,8 +371,8 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
                 onClick={() => setReviewRating(r)}
                 className={`text-3xl leading-none transition ${
                   reviewRating !== null && r <= reviewRating
-                    ? "text-yellow-500"
-                    : "text-gray-300 hover:text-yellow-500"
+                    ? "text-amber-500"
+                    : "text-gray-300 hover:text-amber-500"
                 }`}
                 aria-label={`Rate ${r} stars`}
               >
@@ -378,34 +386,23 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
             <button
               type="submit"
               disabled={!user || reviewRating === null}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-5 rounded-full text-sm transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="bg-blue-500/20 hover:bg-blue-500/35 text-blue-900 font-semibold py-2 px-5 rounded-full text-sm border border-blue-500/35 hover:border-blue-500/50 transition-all shadow-sm active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {currentUserReview ? "Update Review" : "Post Review"}
             </button>
           </div>
         </form>
-
-       
-     
-         
-           
-             
-          
-    
-  
-
-       
       </section>
 
-      <section className="bg-white rounded-[1.75rem] sm:rounded-[2.5rem] shadow-md p-5 sm:p-6">
+      <section className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-[1.75rem] sm:rounded-[2.5rem] shadow-lg p-5 sm:p-6 saturate-150">
         <div className="flex items-end justify-between mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Comments</h2>
             <p className="text-gray-400 text-sm">{comments.length} discussions</p>
           </div>
-          <select className="text-xs font-semibold text-gray-500 bg-transparent border-none focus:ring-0 cursor-pointer pr-8 py-0">
-            <option>Newest</option>
-            <option>Top Rated</option>
+          <select className="text-xs font-semibold text-gray-500 bg-white/10 border border-white/20 rounded-lg focus:ring-0 cursor-pointer px-3 py-1 mr-2 outline-none">
+            <option className="bg-white text-gray-800">Newest</option>
+            <option className="bg-white text-gray-800">Top Rated</option>
           </select>
         </div>
         <form onSubmit={handleCommentSubmit} className="mb-8">
@@ -414,7 +411,7 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
             value={commentBody}
             onChange={(e) => setCommentBody(e.target.value)}
             maxLength={MAX_COMMENT_LENGTH}
-            className="w-full h-28 p-5 rounded-3xl border border-gray-100 bg-gray-50 focus:bg-white focus:ring-2 focus:ring-indigo-100 focus:border-indigo-200 text-sm placeholder-gray-400 transition-all outline-none"
+            className="w-full h-28 p-4 rounded-2xl border border-white/30 bg-white/20 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:bg-white/35 transition-all duration-300 text-sm outline-none"
             rows={3}
             required
           />
@@ -427,16 +424,16 @@ export default function KuppiFeedback({ kuppiId }: { kuppiId: string }) {
             )}
             <button
               type="submit"
-              className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-8 rounded-full text-sm transition-all shadow-lg shadow-indigo-100 active:scale-95"
+              className="bg-blue-500/20 hover:bg-blue-500/35 text-blue-900 font-bold py-2.5 px-8 rounded-full text-sm border border-blue-500/35 hover:border-blue-500/50 transition-all shadow-sm active:scale-95 cursor-pointer"
             >
               Post Comment
             </button>
           </div>
         </form>
 
-        <div className="space-y-3">
+        <div className="space-y-4">
           {comments.length === 0 && (
-            <p className="text-sm text-gray-500">No comments yet.</p>
+            <p className="text-sm text-gray-500 text-center py-4 font-medium">No comments yet.</p>
           )}
           {commentTree.roots.map((comment) => renderComment(comment))}
         </div>

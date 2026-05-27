@@ -85,17 +85,20 @@ interface VideoCardProps {
 }
 
 export default function VideoCard({ video, moduleId, isActive, onToggle }: VideoCardProps) {
-
-
   return (
-    <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-3xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:bg-white/25 hover:shadow-xl h-fit saturate-150">
+    <div className="bg-white/20 backdrop-blur-xl border border-white/30 rounded-3xl shadow-lg overflow-hidden transition-all duration-300 ease-in-out hover:bg-white/25 hover:translate-y-[-2px] hover:shadow-xl h-fit saturate-150">
       <button
         onClick={() => onToggle(video.id)}
-        className="w-full text-left p-6 flex justify-between items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+        className="w-full text-left p-6 flex justify-between items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 cursor-pointer"
       >
-        <div className="flex items-center">
-          
-          <h2 className="text-lg font-semibold text-gray-800">{video.title}</h2>
+        <div className="flex items-center gap-3">
+          {/* Round-cornered play icon badge */}
+          <div className={`p-2 rounded-xl transition-all duration-300 ${isActive ? 'bg-blue-500 text-white shadow-md' : 'bg-blue-500/10 text-blue-600'}`}>
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+          <h2 className={`text-lg font-bold transition-colors duration-300 ${isActive ? 'text-blue-700' : 'text-gray-800'}`}>{video.title}</h2>
         </div>
         <svg 
           className={`w-6 h-6 text-blue-500 transform transition-transform duration-300 ${isActive ? 'rotate-180' : ''}`} 
@@ -126,7 +129,7 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
       animate={{ opacity: 1, height: 'auto' }}
       exit={{ opacity: 0, height: 0 }}
       transition={{ duration: 0.3 }}
-      sx={{ px: 3, pb: 3, borderTop: '1px solid #dbeafe' }}
+      sx={{ px: 3, pb: 3, borderTop: '1px solid #e2e8f0' }}
     >
       {video.description && (
         <Typography variant="body2" color="text.secondary" sx={{ mt: 2, mb: 2, whiteSpace: 'pre-line' }}>
@@ -135,21 +138,26 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
       )}
 
       {video.owner?.name && (
-        <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 2, p: 1.5, bgcolor: '#eff6ff', borderRadius: 1.5 }}>
-          <Box sx={{ width: 32, height: 32, background: 'linear-gradient(to right, #bfdbfe, #c7d2fe)', borderRadius: '999px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="flex items-center gap-3.5 mt-3 mb-4 p-3 bg-blue-500/10 border border-blue-500/15 rounded-2xl shadow-sm">
+          <div className="w-9 h-9 bg-gradient-to-br from-blue-400/20 to-indigo-500/20 border border-blue-400/30 text-blue-600 rounded-full flex items-center justify-center">
             <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
             </svg>
-          </Box>
-          <Typography fontWeight={600}>{video.owner.name}</Typography>
-        </Stack>
+          </div>
+          <div>
+            <p className="text-[10px] text-blue-400 font-bold uppercase tracking-wider leading-none mb-1">Done by</p>
+            <p className="font-bold text-gray-800 text-sm leading-none">{video.owner.name}</p>
+          </div>
+        </div>
       )}
 
-      <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ mb: 2 }}>
+      <div className="flex flex-wrap gap-2 mt-2 mb-4">
         {video.language_code && (
-          <Chip size="small" label={`Language: ${video.language_code.toUpperCase()}`} color="primary" variant="outlined" />
+          <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-indigo-500/10 border border-indigo-500/20 text-indigo-700 shadow-sm uppercase tracking-wide">
+            🌐 Language: {video.language_code.toUpperCase()}
+          </span>
         )}
-      </Stack>
+      </div>
 
       <div className="space-y-3">
         {video.youtube_links.map((url, index) => {
@@ -163,13 +171,13 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
           };
           // Encode to UTF-8 first, then base64 to handle non-ASCII characters
           const encodedData = btoa(
-  encodeURIComponent(JSON.stringify(videoData))
-);
+            encodeURIComponent(JSON.stringify(videoData))
+          );
           
           return (
             <motion.button
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
               key={`url-${index}`}
               onClick={() =>
@@ -177,10 +185,10 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                   `/module-kuppi/${moduleId}/watch?data=${encodedData}`
                 )
               }
-              className="w-full flex items-center justify-center px-4 py-3 bg-red-500/20 backdrop-blur-md border border-white/20 hover:bg-red-500/30 text-red-950 font-bold rounded-2xl shadow-sm transition-all duration-300 cursor-pointer"
+              className="w-full flex items-center justify-center px-4 py-3 bg-red-500/15 hover:bg-red-500/25 border border-red-500/25 hover:border-red-500/40 text-red-700 hover:text-red-800 font-bold rounded-2xl shadow-sm transition-all duration-300 cursor-pointer text-sm sm:text-base"
             >
               <svg
-                className="w-5 h-5 mr-2 text-red-800"
+                className="w-5 h-5 mr-2 text-red-600 flex-shrink-0"
                 fill="currentColor"
                 viewBox="0 0 24 24"
                 aria-hidden="true"
@@ -195,73 +203,72 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
         <div className="flex flex-wrap gap-2">
           {video.telegram_links?.map((link, index) => (
             <motion.a
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
               key={`tg-${index}`}
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-grow flex items-center justify-center px-4 py-2.5 bg-blue-500/20 backdrop-blur-md border border-white/20 text-xs font-bold rounded-2xl text-blue-950 shadow-sm transition-all duration-300"
+              className="flex-grow flex items-center justify-center px-4 py-2.5 bg-blue-500/15 border border-blue-500/25 hover:bg-blue-500/25 hover:border-blue-500/40 text-xs font-bold rounded-2xl text-blue-700 hover:text-blue-800 shadow-sm transition-all duration-300"
             >
-           <svg
-  className="w-6 h-6 mr-1.5 text-blue-800"
-  fill="currentColor"
-  viewBox="0 0 25 25"
-  aria-hidden="true"
->
-  <path d="M9.999 15.2 9.85 19c.35 0 .5-.15.7-.35l1.65-1.6 3.45 2.55c.65.35 1.1.15 1.25-.6l2.25-10.6c.2-.9-.35-1.25-.95-1.05L4.4 10.35c-.9.35-.85.85-.15 1.05l3.2 1 7.4-4.65c.35-.2.65-.1.4.15l-5.8 5.3Z" />
-</svg>
-
+              <svg
+                className="w-5 h-5 mr-1.5 text-blue-600 flex-shrink-0"
+                fill="currentColor"
+                viewBox="0 0 25 25"
+                aria-hidden="true"
+              >
+                <path d="M9.999 15.2 9.85 19c.35 0 .5-.15.7-.35l1.65-1.6 3.45 2.55c.65.35 1.1.15 1.25-.6l2.25-10.6c.2-.9-.35-1.25-.95-1.05L4.4 10.35c-.9.35-.85.85-.15 1.05l3.2 1 7.4-4.65c.35-.2.65-.1.4.15l-5.8 5.3Z" />
+              </svg>
               Download Video From Telegram {video.telegram_links!.length > 1 ? index + 1 : ""}
             </motion.a>
           ))}
 
-            {video.onedrive_cloud_video_urls?.map((link, index) => (
+          {video.onedrive_cloud_video_urls?.map((link, index) => (
             <motion.a
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
               key={`cloud-${index}`}
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center px-4 py-3 bg-sky-500/20 backdrop-blur-md border border-white/20 text-sm font-bold rounded-2xl text-sky-950 shadow-sm transition-all duration-300"
-        >
-              <OneDriveIcon className="h-5 w-5 mr-2" />
+              className="w-full flex items-center justify-center px-4 py-3 bg-sky-500/15 border border-sky-500/25 hover:bg-sky-500/25 hover:border-sky-500/40 text-sm font-bold rounded-2xl text-sky-700 hover:text-sky-800 shadow-sm transition-all duration-300"
+            >
+              <OneDriveIcon className="h-5 w-5 mr-2 flex-shrink-0" />
               OneDrive Video {video.onedrive_cloud_video_urls!.length > 1 ? index + 1 : ""}
             </motion.a>
-            ))}
+          ))}
 
-            {video.gdrive_cloud_video_urls?.map((link, index) => (
+          {video.gdrive_cloud_video_urls?.map((link, index) => (
             <motion.a
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
               key={`gdrive-${index}`}
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="w-full flex items-center justify-center px-4 py-3 bg-green-500/20 backdrop-blur-md border border-white/20 text-sm font-bold rounded-2xl text-green-950 shadow-sm transition-all duration-300"
+              className="w-full flex items-center justify-center px-4 py-3 bg-green-500/15 border border-green-500/25 hover:bg-green-500/25 hover:border-green-500/40 text-sm font-bold rounded-2xl text-green-700 hover:text-green-800 shadow-sm transition-all duration-300"
             >
-              <GoogleDriveIcon className="w-5 h-5 mr-2" />
+              <GoogleDriveIcon className="w-5 h-5 mr-2 flex-shrink-0" />
               Google Drive Video {video.gdrive_cloud_video_urls!.length > 1 ? index + 1 : ""}
             </motion.a>
-            ))}
+          ))}
 
           {video.material_urls?.map((link, index) => (
             <motion.a
-              whileHover={{ scale: 1.03, y: -1 }}
-              whileTap={{ scale: 0.97 }}
+              whileHover={{ scale: 1.02, y: -1 }}
+              whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 15 }}
               key={`mat-${index}`}
               href={link}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-grow flex items-center justify-center px-4 py-2.5 bg-slate-500/20 backdrop-blur-md border border-white/20 text-xs font-bold rounded-2xl text-slate-950 shadow-sm transition-all duration-300"
+              className="flex-grow flex items-center justify-center px-4 py-2.5 bg-slate-500/15 border border-slate-500/25 hover:bg-slate-500/25 hover:border-slate-500/40 text-xs font-bold rounded-2xl text-slate-700 hover:text-slate-800 shadow-sm transition-all duration-300"
             >
               <svg
-                className="w-4 h-4 mr-1.5 text-slate-800"
+                className="w-4 h-4 mr-1.5 text-slate-600 flex-shrink-0"
                 fill="currentColor"
                 viewBox="0 0 20 20"
               >
