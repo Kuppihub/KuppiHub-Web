@@ -70,8 +70,6 @@ export default function HeaderSearch() {
           : (data && data.data && Array.isArray(data.data.data) 
               ? data.data.data 
               : (Array.isArray(data) ? data : []));
-              
-        console.log("Search query:", query, "Parsed Results:", searchResults);
         setResults(searchResults);
       } catch (err) {
         console.error("Search fetch error:", err);
