@@ -1,8 +1,27 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import supabase from '../../../lib/supabase-admin';
 
+interface VideoQueryResult {
+  id: number;
+  title: string;
+  youtube_links: string[] | null;
+  telegram_links: string[] | null;
+  material_urls: string[] | null;
+  onedrive_cloud_video_urls: string[] | null;
+  gdrive_cloud_video_urls: string[] | null;
+  is_kuppi: boolean;
+  description: string;
+  language_code: string;
+  created_at: string;
+  published_at: string;
+  allowed_domains: string[] | null;
+  owner: {
+    name: string;
+  } | null;
+}
+
 // Helper function to check if user's email domain is allowed
-function canAccessVideo(userEmail, allowedDomains) {
+function canAccessVideo(userEmail: string | null, allowedDomains: string[] | null): boolean {
   // If no domain restrictions, video is public
   if (!allowedDomains || allowedDomains.length === 0) {
     return true;
@@ -14,13 +33,15 @@ function canAccessVideo(userEmail, allowedDomains) {
   }
   
   // Extract domain from email (e.g., 'user@uom.lk' -> '@uom.lk')
-  const userDomain = '@' + userEmail.split('@')[1];
+  const parts = userEmail.split('@');
+  if (parts.length < 2) return false;
+  const userDomain = '@' + parts[1];
   
   // Check if user's domain is in the allowed list
   return allowedDomains.includes(userDomain);
 }
 
-export async function GET(req) {
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const moduleId = searchParams.get("moduleId");
@@ -65,14 +86,16 @@ export async function GET(req) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
+    const queryData = (data || []) as unknown as VideoQueryResult[];
+
     // Filter videos based on user's email domain access
-    const accessibleVideos = data.filter(video => 
+    const accessibleVideos = queryData.filter(video => 
       canAccessVideo(userEmail, video.allowed_domains)
     );
 
     return NextResponse.json(accessibleVideos);
 
-  } catch (err) {
-    return NextResponse.json({ error: err.message || 'Something went wrong' }, { status: 500 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err?.message || 'Something went wrong' }, { status: 500 });
   }
 }

@@ -1,7 +1,18 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import supabase from "../../../lib/supabase-admin";
 
-export async function GET(req) {
+interface ModuleData {
+  id: number;
+  code: string;
+  name: string;
+  description: string | null;
+}
+
+interface VideoCount {
+  module_id: number;
+}
+
+export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const idsParam = searchParams.get("ids");
@@ -31,22 +42,26 @@ export async function GET(req) {
       return NextResponse.json({ error: modulesError.message }, { status: 500 });
     }
 
+    const typedModules = (modulesData || []) as ModuleData[];
+
     // Fetch video counts for each module
     const { data: videoCounts, error: videoError } = await supabase
       .from("videos")
       .select("module_id")
       .in("module_id", moduleIds);
 
+    const typedVideoCounts = (videoCounts || []) as VideoCount[];
+
     // Count videos per module
-    const countMap = {};
-    if (videoCounts) {
-      videoCounts.forEach((v) => {
+    const countMap: Record<number, number> = {};
+    if (typedVideoCounts) {
+      typedVideoCounts.forEach((v) => {
         countMap[v.module_id] = (countMap[v.module_id] || 0) + 1;
       });
     }
 
     // Transform to match expected format
-    const transformedData = modulesData.map((item) => ({
+    const transformedData = typedModules.map((item) => ({
       module_id: item.id,
       module: {
         id: item.id,
@@ -58,8 +73,8 @@ export async function GET(req) {
     }));
 
     return NextResponse.json(transformedData);
-  } catch (err) {
+  } catch (err: any) {
     console.error("Dashboard modules API error:", err);
-    return NextResponse.json({ error: err.message || "Something went wrong" }, { status: 500 });
+    return NextResponse.json({ error: err?.message || "Something went wrong" }, { status: 500 });
   }
 }

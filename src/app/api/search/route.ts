@@ -1,7 +1,22 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import supabase from "../../../lib/supabase-admin";
 
-export async function GET(req) {
+interface SearchResult {
+  id: number;
+  title: string;
+  description: string;
+  module_id: number;
+  module_code: string;
+  module_name: string;
+  module_description: string;
+  student_name: string;
+  is_approved: boolean;
+  is_hidden: boolean;
+  created_at: string;
+  published_at: string;
+}
+
+export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const query = searchParams.get("q") || "";
 
@@ -24,5 +39,7 @@ export async function GET(req) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
-  return NextResponse.json({ data });
+  const typedData = (data || []) as SearchResult[];
+
+  return NextResponse.json({ data: typedData });
 }
