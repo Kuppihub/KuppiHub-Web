@@ -17,8 +17,12 @@ export default function NewTutorCard() {
       >
         <Box
           sx={{
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            borderRadius: 3,
+            background: "linear-gradient(135deg, rgba(102, 126, 234, 0.25) 0%, rgba(118, 75, 162, 0.25) 100%)",
+            backdropFilter: "blur(20px)",
+            WebkitBackdropFilter: "blur(20px)",
+            border: "1px solid rgba(255, 255, 255, 0.3)",
+            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.2)",
+            borderRadius: 4,
             p: { xs: 2, sm: 2.5 },
             mb: { xs: 4, sm: 5 },
             mt: { xs: 3, sm: 4 },
@@ -47,17 +51,22 @@ export default function NewTutorCard() {
             target="_blank"
             rel="noopener noreferrer"
             sx={{
-              bgcolor: "white",
-              color: "#667eea",
-              fontWeight: 600,
-              px: { xs: 2, sm: 3 },
-              py: 1,
-              borderRadius: 2,
+              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0.95))",
+              backdropFilter: "blur(8px)",
+              color: "#5b21b6",
+              fontWeight: 700,
+              px: { xs: 2.5, sm: 3.5 },
+              py: 1.2,
+              borderRadius: 999,
               textTransform: "none",
               fontSize: { xs: "0.8rem", sm: "0.875rem" },
               whiteSpace: "nowrap",
+              boxShadow: "0 4px 14px 0 rgba(102, 126, 234, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.5)",
+              transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
               "&:hover": {
-                bgcolor: "rgba(255,255,255,0.9)",
+                background: "#ffffff",
+                transform: "scale(1.04) translateY(-1px)",
+                boxShadow: "0 6px 20px 0 rgba(102, 126, 234, 0.4)",
               },
             }}
           >

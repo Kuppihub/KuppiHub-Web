@@ -476,7 +476,7 @@ export default function ModuleKuppiPage() {
     <Box className="min-h-screen py-12 px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <Box className="max-w-7xl mx-auto space-y-8">
         <BackButton onClick={handleBack} className="mb-2" />
-        <PageHeader title="Module Content" />
+        <PageHeader title="Module Content" subtitle="Open a directory to view kuppi videos or study resources" />
 
         <Paper elevation={0} sx={{ p: 3, borderRadius: 3, border: '1px solid #dbeafe', background: 'rgba(255,255,255,0.9)' }}>
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
