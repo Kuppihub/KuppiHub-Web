@@ -11,10 +11,12 @@ export async function GET() {
         name,
         image_url,
         linkedin_url,
+        approved,
         faculty:faculties(name),
        
         videos:videos!inner(id, title, module_id, is_approved, is_hidden, modules(name))
       `)
+      .eq('approved', true)
       .neq('name', 'Unknown');  // filter out students with name = 'Unknown'
 
     if (error) throw error;

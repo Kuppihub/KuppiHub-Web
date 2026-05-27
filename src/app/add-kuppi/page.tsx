@@ -45,6 +45,27 @@ export default function AddKuppiPage() {
   const [moduleSearch, setModuleSearch] = useState("");
   const [selectedModule, setSelectedModule] = useState<ModuleSearchResult | null>(null);
 
+  // Tutors suggestion list
+  const [tutors, setTutors] = useState<{ id: number; name: string }[]>([]);
+
+  // Load existing tutors list
+  useEffect(() => {
+    const fetchTutors = async () => {
+      try {
+        const res = await fetch("/api/tutors");
+        if (res.ok) {
+          const data = await res.json();
+          if (data && Array.isArray(data.students)) {
+            setTutors(data.students.map((s: any) => ({ id: s.id, name: s.name })));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch tutors list:", err);
+      }
+    };
+    fetchTutors();
+  }, []);
+
   // Redirect if not logged in
   useEffect(() => {
     if (!authLoading && !user) {
@@ -118,6 +139,10 @@ export default function AddKuppiPage() {
       openErrorDialog("Please enter a description");
       return;
     }
+    if (!formData.studentName.trim()) {
+      openErrorDialog("Please enter the student / tutor name");
+      return;
+    }
 
     // Filter out empty links
     const youtubeLinks = formData.youtubeLinks.filter(l => l.url.trim()).map(l => l.url.trim());
@@ -147,7 +172,8 @@ export default function AddKuppiPage() {
         title: formData.title.trim(),
         description: formData.description.trim(),
         language_code: formData.languageCode,
-        index_no: formData.indexNo.trim() || null,
+        student_id: formData.studentId,
+        student_name: formData.studentName.trim() || null,
         is_kuppi: formData.isKuppi,
         youtube_links: youtubeLinks,
         telegram_links: telegramLinks.length > 0 ? telegramLinks : null,
@@ -244,7 +270,11 @@ export default function AddKuppiPage() {
                 />
 
                 {/* Form Fields */}
-                <FormFields formData={formData} onChange={handleFormChange} />
+                <FormFields 
+                  formData={formData} 
+                  onChange={handleFormChange} 
+                  tutors={tutors}
+                />
 
                 {/* Divider */}
                 <Divider sx={{ my: { xs: 2, sm: 3 } }}>

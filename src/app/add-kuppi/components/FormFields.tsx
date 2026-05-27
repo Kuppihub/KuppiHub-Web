@@ -1,11 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import TextField from "@mui/material/TextField";
 import FormControl from "@mui/material/FormControl";
-import FormLabel from "@mui/material/FormLabel";
-import RadioGroup from "@mui/material/RadioGroup";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import Radio from "@mui/material/Radio";
 import Select from "@mui/material/Select";
 import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
@@ -13,6 +10,7 @@ import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
 import Chip from "@mui/material/Chip";
 import Typography from "@mui/material/Typography";
+import FormControlLabel from "@mui/material/FormControlLabel";
 import LockIcon from "@mui/icons-material/Lock";
 import PublicIcon from "@mui/icons-material/Public";
 import { FormData, DOMAIN_OPTIONS } from "./types";
@@ -20,52 +18,21 @@ import { FormData, DOMAIN_OPTIONS } from "./types";
 interface FormFieldsProps {
   formData: FormData;
   onChange: (updates: Partial<FormData>) => void;
+  tutors?: { id: number; name: string }[];
 }
 
-export default function FormFields({ formData, onChange }: FormFieldsProps) {
+export default function FormFields({ formData, onChange, tutors = [] }: FormFieldsProps) {
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  const filteredTutors = formData.studentName.trim() === "" 
+    ? [] 
+    : (tutors || []).filter(t => 
+        t.name.toLowerCase().includes(formData.studentName.toLowerCase()) &&
+        t.name.toLowerCase() !== formData.studentName.toLowerCase()
+      );
+
   return (
     <Box sx={{ display: "flex", flexDirection: "column", gap: { xs: 2.5, sm: 3 } }}>
-      {/* Content Type */}
-      <FormControl component="fieldset">
-        <FormLabel 
-          component="legend" 
-          sx={{ 
-            fontSize: { xs: "0.8rem", sm: "0.875rem" },
-            fontWeight: 500,
-            color: "#374151",
-            mb: 0.5,
-          }}
-        >
-          Content Type
-        </FormLabel>
-        <RadioGroup
-          row
-          value={formData.isKuppi ? "kuppi" : "material"}
-          onChange={(e) => onChange({ isKuppi: e.target.value === "kuppi" })}
-        >
-          <FormControlLabel 
-            value="kuppi" 
-            control={<Radio size="small" />} 
-            label="Kuppi Video"
-            sx={{ 
-              "& .MuiFormControlLabel-label": { 
-                fontSize: { xs: "0.8rem", sm: "0.875rem" } 
-              } 
-            }}
-          />
-          <FormControlLabel 
-            value="material" 
-            control={<Radio size="small" />} 
-            label="Notes / Papers / Materials"
-            sx={{ 
-              "& .MuiFormControlLabel-label": { 
-                fontSize: { xs: "0.8rem", sm: "0.875rem" } 
-              } 
-            }}
-          />
-        </RadioGroup>
-      </FormControl>
-
       {/* Title */}
       <TextField
         fullWidth
@@ -105,8 +72,63 @@ Reliability Function`}
         }}
       />
 
-      {/* Language and Index Number row */}
-      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: { xs: 2.5, sm: 3 } }}>
+      {/* Student Name and Language Row */}
+      <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1.5fr 1fr" }, gap: { xs: 2.5, sm: 3 } }}>
+        {/* Student Name with Autocomplete suggestions */}
+        <div className="relative">
+          <TextField
+            fullWidth
+            required
+            label="Student / Tutor Name"
+            value={formData.studentName}
+            onChange={(e) => {
+              const typedName = e.target.value;
+              const matchingTutor = (tutors || []).find(t => t.name.toLowerCase() === typedName.toLowerCase());
+              onChange({ 
+                studentName: typedName,
+                studentId: matchingTutor ? matchingTutor.id : null
+              });
+              setShowSuggestions(true);
+            }}
+            onFocus={() => setShowSuggestions(true)}
+            onBlur={() => {
+              // Delay closing to allow clicking on a suggestion
+              setTimeout(() => setShowSuggestions(false), 200);
+            }}
+            placeholder="e.g., Sangeeth Kariyapperuma"
+            sx={{
+              "& .MuiOutlinedInput-root": {
+                borderRadius: 2,
+              },
+            }}
+          />
+
+          {/* Autocomplete Suggestions Box */}
+          {showSuggestions && filteredTutors.length > 0 && (
+            <div className="absolute left-0 right-0 mt-1.5 max-h-52 overflow-y-auto bg-white/95 backdrop-blur-md border border-blue-100 shadow-xl rounded-xl z-50 transition-all duration-300">
+              <div className="p-1.5 space-y-1">
+                <p className="text-[10px] text-blue-900/60 font-bold px-2 py-1 uppercase tracking-wider">Suggested Tutors</p>
+                {filteredTutors.map((tutor) => (
+                  <button
+                    key={tutor.id}
+                    type="button"
+                    onClick={() => {
+                      onChange({
+                        studentName: tutor.name,
+                        studentId: tutor.id
+                      });
+                      setShowSuggestions(false);
+                    }}
+                    className="w-full text-left px-3 py-2 text-xs sm:text-sm text-gray-800 hover:bg-blue-500/10 hover:text-blue-900 rounded-lg transition-all duration-200 cursor-pointer font-medium"
+                  >
+                    {tutor.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+
         {/* Language */}
         <FormControl fullWidth>
           <InputLabel>Language</InputLabel>
@@ -123,25 +145,6 @@ Reliability Function`}
             <MenuItem value="en">English</MenuItem>
           </Select>
         </FormControl>
-
-        {/* Index Number */}
-        <TextField
-          fullWidth
-          label="Student Index Number"
-          value={formData.indexNo}
-          onChange={(e) => onChange({ indexNo: e.target.value })}
-          placeholder="e.g., 210001A"
-          helperText="Optional - used to link to your profile"
-          sx={{
-            "& .MuiOutlinedInput-root": {
-              borderRadius: 2,
-            },
-            "& .MuiFormHelperText-root": {
-              fontSize: { xs: "0.65rem", sm: "0.75rem" },
-              mt: 0.5,
-            },
-          }}
-        />
       </Box>
 
       {/* Access Restriction */}
