@@ -17,13 +17,8 @@ import {
   Link,
   MenuItem,
   Paper,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Select,
   Stack,
-  TextField,
   Typography,
 } from '@mui/material';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -36,6 +31,9 @@ import BackButton from '../../components/BackButton';
 import { Video } from '../../types/video';
 import { useAuth } from '@/contexts/AuthContext';
 import { getIdToken } from '@/lib/auth-utils';
+import { checkAndManageCacheExpiration, forceExpireCache } from '@/lib/cache-utils';
+import ResourceUploadDialog from './components/ResourceUploadDialog';
+
 
 type ResourceCategory = {
   id: number;
@@ -87,13 +85,8 @@ export default function ModuleKuppiPage() {
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [resourcesLoading, setResourcesLoading] = useState(true);
 
-  const [uploadTitle, setUploadTitle] = useState('');
-  const [uploadDescription, setUploadDescription] = useState('');
   const [uploadCategoryId, setUploadCategoryId] = useState<number | null>(null);
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState<string | null>(null);
-  const [uploadError, setUploadError] = useState<string | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
 
   const [activeDirectory, setActiveDirectory] = useState<'root' | 'kuppi' | 'resource'>('root');
@@ -112,6 +105,7 @@ export default function ModuleKuppiPage() {
 
   useEffect(() => {
     if (!moduleId || typeof window === 'undefined') return;
+    checkAndManageCacheExpiration();
     const raw = window.sessionStorage.getItem(storageKey);
     if (!raw) return;
 
@@ -371,52 +365,7 @@ export default function ModuleKuppiPage() {
     syncExplorerUrl({ view: 'root', categoryId: null, folderId: null });
   };
 
-  const handleUpload = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setUploadError(null);
-    setUploadMessage(null);
 
-    if (!user) return setUploadError('Please log in to upload resources.');
-    if (!uploadCategoryId) return setUploadError('Please select a category.');
-    if (!uploadTitle.trim()) return setUploadError('Please enter a title.');
-    if (!uploadFile) return setUploadError('Please choose a file.');
-
-    setUploading(true);
-    try {
-      const token = await getIdToken(user);
-      if (!token) return setUploadError('Failed to authenticate upload request.');
-
-      const fd = new FormData();
-      fd.append('module_id', moduleId);
-      fd.append('category_id', String(uploadCategoryId));
-      fd.append('folder_id', activeParentFolderId === null ? '' : String(activeParentFolderId));
-      fd.append('title', uploadTitle.trim());
-      fd.append('description', uploadDescription.trim());
-      fd.append('is_public', 'true');
-      fd.append('file', uploadFile);
-
-      const res = await fetch('/api/module-resources/upload-discord', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
-      });
-
-      const data = await res.json();
-      if (!res.ok) throw new Error(data?.error || 'Upload failed');
-
-      setUploadTitle('');
-      setUploadDescription('');
-      setUploadFile(null);
-      setUploadDialogOpen(false);
-      setUploadMessage(data?.message || 'Uploaded successfully.');
-      resourcesCacheRef.current.clear();
-      await fetchResources();
-    } catch (err) {
-      setUploadError(err instanceof Error ? err.message : 'Upload failed');
-    } finally {
-      setUploading(false);
-    }
-  };
 
   const getActiveCategoryName = () => (
     categories.find((c) => c.id === activeCategoryId)?.name || 'Resource'
@@ -751,7 +700,6 @@ export default function ModuleKuppiPage() {
               </Alert>
 
               {uploadMessage ? <Alert severity="success">{uploadMessage}</Alert> : null}
-              {uploadError ? <Alert severity="error">{uploadError}</Alert> : null}
 
               {resourcesLoading ? (
                 <Stack direction="row" spacing={1.5} alignItems="center">
@@ -832,58 +780,21 @@ export default function ModuleKuppiPage() {
                 ))}
               </Stack>
 
-              <Dialog
+              <ResourceUploadDialog
                 open={uploadDialogOpen}
-                onClose={() => (uploading ? null : setUploadDialogOpen(false))}
-                fullWidth
-                maxWidth="sm"
-              >
-                <DialogTitle>{getAddButtonLabel()}</DialogTitle>
-                <Box component="form" onSubmit={handleUpload}>
-                  <DialogContent>
-                    <Stack spacing={2}>
-                      <TextField
-                        fullWidth
-                        label="Category"
-                        value={getActiveCategoryName()}
-                        InputProps={{ readOnly: true }}
-                      />
-                      <TextField
-                        fullWidth
-                        label="Title"
-                        placeholder="Enter title"
-                        value={uploadTitle}
-                        onChange={(e) => setUploadTitle(e.target.value)}
-                      />
-                      <TextField
-                        fullWidth
-                        label="Description"
-                        placeholder="Optional"
-                        value={uploadDescription}
-                        onChange={(e) => setUploadDescription(e.target.value)}
-                      />
-                      <Button variant="outlined" component="label" fullWidth>
-                        {uploadFile ? `Selected: ${uploadFile.name}` : 'Choose File'}
-                        <input
-                          type="file"
-                          accept="application/pdf,.pdf"
-                          hidden
-                          onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-                        />
-                      </Button>
-                      <Typography variant="caption" color="text.secondary">
-                        PDF only, max 10 MB
-                      </Typography>
-                    </Stack>
-                  </DialogContent>
-                  <DialogActions sx={{ px: 3, pb: 2 }}>
-                    <Button onClick={() => setUploadDialogOpen(false)} disabled={uploading}>Cancel</Button>
-                    <Button type="submit" variant="contained" disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload'}
-                    </Button>
-                  </DialogActions>
-                </Box>
-              </Dialog>
+                onClose={() => setUploadDialogOpen(false)}
+                onUploadSuccess={(msg) => {
+                  setUploadMessage(msg);
+                  forceExpireCache();
+                  resourcesCacheRef.current.clear();
+                  fetchResources();
+                }}
+                moduleId={moduleId}
+                uploadCategoryId={uploadCategoryId}
+                categoryName={getActiveCategoryName()}
+                addButtonLabel={getAddButtonLabel()}
+                activeParentFolderId={activeParentFolderId}
+              />
             </Stack>
           ) : null}
         </Paper>

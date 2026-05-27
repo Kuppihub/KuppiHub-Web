@@ -23,6 +23,8 @@ import CloseIcon from "@mui/icons-material/Close";
 import SchoolIcon from "@mui/icons-material/School";
 import ModuleSelector from "../components/ModuleSelector";
 import { useAuth } from "@/contexts/AuthContext";
+import { checkAndManageCacheExpiration } from "@/lib/cache-utils";
+
 
 interface ModuleData {
   module_id: number;
@@ -163,6 +165,7 @@ export default function DashboardPage() {
     if (typeof window === "undefined" || authLoading) return;
 
     const initializeModules = async () => {
+      checkAndManageCacheExpiration();
       const cachedRaw = sessionStorage.getItem(dashboardCacheKey);
       if (cachedRaw) {
         try {
