@@ -111,7 +111,7 @@ export default function ModuleKuppiPage() {
   const params = useParams();
   const searchParams = useSearchParams();
   const moduleId = params.moduleId as string;
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const storageKey = `module-kuppi-cache:${moduleId}:${user?.uid ?? 'guest'}`;
 
   useEffect(() => {
@@ -222,13 +222,13 @@ export default function ModuleKuppiPage() {
       if (activeParentFolderId !== null) qs.set('parentFolderId', String(activeParentFolderId));
 
       const token = await getIdToken(user);
-      if (!token) {
-        setResourcesLoading(false);
-        return;
+      const headers: HeadersInit = {};
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
       }
 
       const res = await fetch(`/api/module-resources?${qs.toString()}`, {
-        headers: { Authorization: `Bearer ${token}` },
+        headers,
       });
       if (!res.ok) throw new Error('Failed to load resources');
 
@@ -271,10 +271,28 @@ export default function ModuleKuppiPage() {
     fetchVideos();
   }, [activeDirectory, didLoadCategories, fetchVideos]);
 
+  const prevUserUidRef = useRef<string | undefined>(undefined);
+
   useEffect(() => {
-    if (didLoadCategories || !moduleId || !user) return;
+    if (authLoading) return;
+    const currentUid = user?.uid;
+    if (prevUserUidRef.current !== undefined && prevUserUidRef.current !== currentUid) {
+      videosCacheRef.current = null;
+      resourcesCacheRef.current = new Map();
+      setDidLoadCategories(false);
+      setVideos([]);
+      setCategories([]);
+      setFolders([]);
+      setResources([]);
+      setResourcesLoading(true);
+    }
+    prevUserUidRef.current = currentUid;
+  }, [user, authLoading]);
+
+  useEffect(() => {
+    if (didLoadCategories || !moduleId || authLoading) return;
     fetchResources().finally(() => setDidLoadCategories(true));
-  }, [didLoadCategories, moduleId, user, fetchResources]);
+  }, [didLoadCategories, moduleId, authLoading, fetchResources]);
 
   useEffect(() => {
     if (!didLoadCategories) return;

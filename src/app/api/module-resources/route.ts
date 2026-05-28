@@ -12,15 +12,12 @@ function canAccessResource(userEmail: string | null, isPublic: boolean, allowedD
 export async function GET(req: NextRequest) {
   try {
     const user = await authenticateRequest(req.headers.get("authorization"));
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
+    const userEmail = user?.email ?? null;
 
     const { searchParams } = new URL(req.url);
     const moduleId = Number(searchParams.get("moduleId"));
     const categoryIdParam = searchParams.get("categoryId");
     const parentFolderIdParam = searchParams.get("parentFolderId");
-    const userEmail = user.email ?? null;
 
     if (!moduleId || Number.isNaN(moduleId)) {
       return NextResponse.json({ error: "moduleId is required" }, { status: 400 });
