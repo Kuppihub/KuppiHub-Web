@@ -22,6 +22,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import CloseIcon from "@mui/icons-material/Close";
 import SchoolIcon from "@mui/icons-material/School";
 import ModuleSelector from "../components/ModuleSelector";
+import Preloader from "../components/Preloader";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkAndManageCacheExpiration } from "@/lib/cache-utils";
 
@@ -358,11 +359,7 @@ export default function DashboardPage() {
   const totalVideos = (modules || []).reduce((sum, module) => sum + (module.video_count || 0), 0);
 
   if (modules === null) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p>Loading...</p>
-      </div>
-    );
+    return <Preloader />;
   }
 
   return (

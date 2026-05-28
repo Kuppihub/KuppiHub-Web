@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { authPost } from "@/lib/auth-fetch";
 import Link from "next/link";
+import Preloader from "../components/Preloader";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Button from "@mui/material/Button";
@@ -205,11 +206,7 @@ export default function AddKuppiPage() {
 
   // Loading state
   if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <CircularProgress sx={{ color: "#6366f1" }} />
-      </div>
-    );
+    return <Preloader />;
   }
 
   // Not logged in

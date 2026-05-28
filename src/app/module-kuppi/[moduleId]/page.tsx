@@ -29,6 +29,7 @@ import VideoCard from '../../components/VideoCard';
 import EmptyState from '../../components/EmptyState';
 import PageHeader from '../../components/PageHeader';
 import BackButton from '../../components/BackButton';
+import Preloader from '../../components/Preloader';
 import { Video } from '../../types/video';
 import { useAuth } from '@/contexts/AuthContext';
 import { getIdToken } from '@/lib/auth-utils';
@@ -438,14 +439,7 @@ export default function ModuleKuppiPage() {
   const orderedCategories = [...categories].sort((a, b) => a.sort_order - b.sort_order);
 
   if (!didLoadCategories && resourcesLoading) {
-    return (
-      <Box className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <Stack direction="row" spacing={2} alignItems="center">
-          <CircularProgress size={22} />
-          <Typography color="primary">Loading module content...</Typography>
-        </Stack>
-      </Box>
-    );
+    return <Preloader />;
   }
 
   if (error) {

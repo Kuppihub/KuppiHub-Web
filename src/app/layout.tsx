@@ -12,6 +12,7 @@ import NotificationSnackbar from "./components/NotificationSnackbar";
 // import LiveCounter from "./components/LiveCounter"; // Temporarily disabled
 import ServiceWorkerRegistrar from "./components/ServiceWorkerRegistrar";
 import Providers from "./providers";
+import Preloader from "./components/Preloader";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -122,7 +123,7 @@ export default function RootLayout({
           <Header />
 
           <main className="flex-1">
-            <Suspense fallback={<div>Loading...</div>}>{children}</Suspense>
+            <Suspense fallback={<Preloader />}>{children}</Suspense>
           </main>
 
           <Footer />

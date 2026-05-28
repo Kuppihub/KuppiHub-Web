@@ -124,7 +124,11 @@ export default function KuppiReviewsInline({ kuppiId }: { kuppiId: string }) {
 
       {message ? <Alert severity="info" sx={{ mt: 1.5 }}>{message}</Alert> : null}
 
-      {loading ? <Typography variant="caption" color="text.secondary">Loading ratings...</Typography> : null}
+      {loading ? (
+        <Box sx={{ mt: 1.5 }}>
+          <CircularProgress size={16} sx={{ color: '#6366f1' }} />
+        </Box>
+      ) : null}
     </Box>
   );
 }

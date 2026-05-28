@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { authGet, authPatch, authPut } from "@/lib/auth-fetch";
 import CircularProgress from "@mui/material/CircularProgress";
+import Preloader from "../components/Preloader";
 import {
   KuppiHeader,
   EmptyState,
@@ -151,11 +152,7 @@ export default function MyKuppisPage() {
 
   // Loading state
   if (authLoading || loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
-        <CircularProgress sx={{ color: "#6366f1" }} />
-      </div>
-    );
+    return <Preloader />;
   }
 
   // Not logged in
