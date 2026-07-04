@@ -378,7 +378,7 @@ export default function DashboardPage() {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                onClick={() => setSelectorOpen(true)}
+                onClick={() => window.dispatchEvent(new CustomEvent("openHeaderSearch"))}
                 sx={{
                   borderRadius: 999,
                   px: 3,
@@ -477,7 +477,7 @@ export default function DashboardPage() {
             <Button
               variant="contained"
               startIcon={<AddIcon />}
-              onClick={() => setSelectorOpen(true)}
+              onClick={() => window.dispatchEvent(new CustomEvent("openHeaderSearch"))}
               sx={{
                 mt: 3,
                 borderRadius: 999,
@@ -520,13 +520,15 @@ export default function DashboardPage() {
         )}
       </div>
 
-      {/* Module Selector Modal */}
-      <ModuleSelector
-        isOpen={selectorOpen}
-        onClose={() => setSelectorOpen(false)}
-        onAddModule={handleAddModuleFromSelector}
-        addedModuleIds={addedModuleIds}
-      />
+      {/* Module Selector Modal (Temporarily disabled - redirect to search) */}
+      {false && (
+        <ModuleSelector
+          isOpen={selectorOpen}
+          onClose={() => setSelectorOpen(false)}
+          onAddModule={handleAddModuleFromSelector}
+          addedModuleIds={addedModuleIds}
+        />
+      )}
     </div>
   );
 }

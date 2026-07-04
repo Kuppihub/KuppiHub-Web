@@ -19,7 +19,11 @@ interface DashboardModule {
   video_count?: number;
 }
 
-export default function HeaderSearch() {
+interface HeaderSearchProps {
+  variant?: "desktop" | "mobile";
+}
+
+export default function HeaderSearch({ variant }: HeaderSearchProps) {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Module[]>([]);
@@ -30,7 +34,21 @@ export default function HeaderSearch() {
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    const handleOpen = () => {
+      const isMobileScreen = window.innerWidth < 640;
+      if (variant === "mobile" && isMobileScreen) {
+        setSearchOpen(true);
+      } else if (variant === "desktop" && !isMobileScreen) {
+        setSearchOpen(true);
+      } else if (!variant) {
+        setSearchOpen(true);
+      }
+    };
+    window.addEventListener("openHeaderSearch", handleOpen);
+    return () => {
+      window.removeEventListener("openHeaderSearch", handleOpen);
+    };
+  }, [variant]);
 
   const handleOverlayClick = (e: React.MouseEvent) => {
     if (e.target === e.currentTarget) {

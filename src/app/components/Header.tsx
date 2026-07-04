@@ -48,7 +48,7 @@ export default function Header() {
 
           <div className="hidden sm:flex flex-1 justify-center px-2">
             <div className="w-full max-w-2xl">
-              <HeaderSearch />
+              <HeaderSearch variant="desktop" />
             </div>
           </div>
 
@@ -188,7 +188,7 @@ export default function Header() {
           <div className="p-4 space-y-4 transition-opacity duration-300">
             {/* Search component inside mobile menu */}
             <div className="pt-2 pb-1">
-              <HeaderSearch />
+              <HeaderSearch variant="mobile" />
             </div>
 
             {['Dashboard', 'Tutors', 'Add-Kuppi'].map((item, i) => (
