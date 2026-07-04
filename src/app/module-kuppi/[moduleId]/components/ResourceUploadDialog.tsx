@@ -46,7 +46,7 @@ export default function ResourceUploadDialog({
 }: ResourceUploadDialogProps) {
   const [uploadTitle, setUploadTitle] = useState('');
   const [uploadDescription, setUploadDescription] = useState('');
-  const [uploadFile, setUploadFile] = useState<File | null>(null);
+  const [uploadLink, setUploadLink] = useState('');
   const [uploadHasRestriction, setUploadHasRestriction] = useState(false);
   const [uploadAllowedDomains, setUploadAllowedDomains] = useState<string[]>([]);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -114,7 +114,7 @@ export default function ResourceUploadDialog({
     if (uploading) return;
     setUploadTitle('');
     setUploadDescription('');
-    setUploadFile(null);
+    setUploadLink('');
     setUploadHasRestriction(false);
     setUploadAllowedDomains([]);
     setUploadError(null);
@@ -126,14 +126,20 @@ export default function ResourceUploadDialog({
     e.preventDefault();
     setUploadError(null);
 
-    if (!user) return setUploadError('Please log in to upload resources.');
+    if (!user) return setUploadError('Please log in to submit resources.');
     if (!uploadCategoryId) return setUploadError('Please select a category.');
     if (!uploadTitle.trim()) return setUploadError('Please enter a title.');
-    if (!uploadFile) return setUploadError('Please choose a file.');
-    const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4 MB
-    if (uploadFile.size > MAX_FILE_SIZE) {
-      return setUploadError('File is too large. The maximum size allowed is 4 MB.');
+    if (!uploadLink.trim()) return setUploadError('Please enter a link.');
+
+    try {
+      const parsedUrl = new URL(uploadLink.trim());
+      if (parsedUrl.protocol !== 'http:' && parsedUrl.protocol !== 'https:') {
+        return setUploadError('Only http and https links are allowed.');
+      }
+    } catch {
+      return setUploadError('Please enter a valid link/URL.');
     }
+
     if (!turnstileToken) return setUploadError('Please complete the Cloudflare Turnstile verification.');
 
     if (uploadHasRestriction && uploadAllowedDomains.length === 0) {
@@ -145,27 +151,25 @@ export default function ResourceUploadDialog({
       const token = await getIdToken(user);
       if (!token) return setUploadError('Failed to authenticate upload request.');
 
-      const fd = new FormData();
-      fd.append('module_id', moduleId);
-      fd.append('category_id', String(uploadCategoryId));
-      fd.append('folder_id', activeParentFolderId === null ? '' : String(activeParentFolderId));
-      fd.append('title', uploadTitle.trim());
-      fd.append('description', uploadDescription.trim());
-      fd.append('is_public', uploadHasRestriction ? 'false' : 'true');
-      fd.append('turnstileToken', turnstileToken);
-      
-      if (uploadHasRestriction) {
-        uploadAllowedDomains.forEach((domain) => {
-          fd.append('allowed_domains', domain);
-        });
-      }
-      
-      fd.append('file', uploadFile);
+      const payload = {
+        module_id: moduleId,
+        category_id: uploadCategoryId,
+        folder_id: activeParentFolderId,
+        title: uploadTitle.trim(),
+        description: uploadDescription.trim(),
+        file_url: uploadLink.trim(),
+        is_public: !uploadHasRestriction,
+        allowed_domains: uploadHasRestriction ? uploadAllowedDomains : [],
+        turnstileToken,
+      };
 
-      const res = await fetch('/api/module-resources/upload-discord', {
+      const res = await fetch('/api/module-resources/upload', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` },
-        body: fd,
+        headers: { 
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify(payload),
       });
 
       let data: any = {};
@@ -173,21 +177,20 @@ export default function ResourceUploadDialog({
       try {
         data = JSON.parse(resText);
       } catch {
-        // If the server returns a 500 HTML or 413 Payload Too Large HTML page
-        throw new Error(resText.substring(0, 100) || 'Upload failed due to a server error.');
+        throw new Error(resText.substring(0, 100) || 'Submission failed due to a server error.');
       }
-      if (!res.ok) throw new Error(data?.error || 'Upload failed');
+      if (!res.ok) throw new Error(data?.error || 'Submission failed');
 
       setUploadTitle('');
       setUploadDescription('');
-      setUploadFile(null);
+      setUploadLink('');
       setUploadHasRestriction(false);
       setUploadAllowedDomains([]);
       setTurnstileToken('');
-      onUploadSuccess(data?.message || 'Uploaded successfully.');
+      onUploadSuccess(data?.message || 'Submitted successfully.');
       handleClose();
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Upload failed';
+      const errorMsg = err instanceof Error ? err.message : 'Submission failed';
       setUploadError(errorMsg);
       onUploadError?.(errorMsg);
     } finally {
@@ -237,19 +240,13 @@ export default function ResourceUploadDialog({
               value={uploadDescription}
               onChange={(e) => setUploadDescription(e.target.value)}
             />
-            
-            <Button variant="outlined" component="label" fullWidth>
-              {uploadFile ? `Selected: ${uploadFile.name}` : 'Choose File'}
-              <input
-                type="file"
-                accept="application/pdf,.pdf,application/zip,.zip,application/msword,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,.docx"
-                hidden
-                onChange={(e) => setUploadFile(e.target.files?.[0] || null)}
-              />
-            </Button>
-            <Typography variant="caption" color="text.secondary" sx={{ mt: -1 }}>
-              PDF, ZIP, Word Docs only, max 4 MB
-            </Typography>
+            <TextField
+              fullWidth
+              label="Resource Link / URL"
+              placeholder="https://example.com/resource"
+              value={uploadLink}
+              onChange={(e) => setUploadLink(e.target.value)}
+            />
 
             {/* Access Restriction Option */}
             <Box 
@@ -399,7 +396,7 @@ export default function ResourceUploadDialog({
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={handleClose} disabled={uploading}>Cancel</Button>
           <Button type="submit" variant="contained" disabled={uploading || !turnstileToken}>
-            {uploading ? 'Uploading...' : 'Upload'}
+            {uploading ? 'Submitting...' : 'Submit'}
           </Button>
         </DialogActions>
       </Box>
