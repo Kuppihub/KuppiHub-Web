@@ -16,6 +16,7 @@ import {
   Paper,
   Stack,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
@@ -348,9 +349,7 @@ export default function DashboardPage() {
   const addedModuleIds = new Set((modules || []).map(m => m.module_id));
   const totalVideos = (modules || []).reduce((sum, module) => sum + (module.video_count || 0), 0);
 
-  if (modules === null) {
-    return <Preloader />;
-  }
+
 
   return (
     <div className="min-h-screen py-6 sm:py-12 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
@@ -402,7 +401,7 @@ export default function DashboardPage() {
               >
                 Add Modules
               </Button>
-              {modules.length > 0 && (
+              {modules && modules.length > 0 && (
                 <Button
                   variant={editMode ? "contained" : "outlined"}
                   color={editMode ? "success" : "inherit"}
@@ -451,7 +450,27 @@ export default function DashboardPage() {
           {syncing ? <LinearProgress sx={{ mt: 2, borderRadius: 999 }} /> : null}
         </Paper>
 
-        {modules.length === 0 ? (
+        {modules === null ? (
+          <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+            {[1, 2, 3].map((n) => (
+              <Paper
+                key={n}
+                sx={{
+                  height: 140,
+                  borderRadius: 4,
+                  border: "1px solid rgba(255, 255, 255, 0.2)",
+                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08))",
+                  backdropFilter: "blur(10px)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <CircularProgress size={30} sx={{ color: "primary.main" }} />
+              </Paper>
+            ))}
+          </Box>
+        ) : modules.length === 0 ? (
           <Paper
             initial={{ opacity: 0, scale: 0.95 }}
             component={motion.div}
