@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -38,11 +38,13 @@ export default function DashboardPage() {
   const [editMode, setEditMode] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [selectorOpen, setSelectorOpen] = useState(false);
+  const userCheckedRef = useRef(false);
   const dashboardCacheKey = `dashboard-cache:${user?.uid ?? "guest"}`;
 
   // Ensure user exists in Supabase before syncing dashboard
   const ensureUserExists = useCallback(async (): Promise<boolean> => {
     if (!user?.uid || !user?.email) return false;
+    if (userCheckedRef.current) return true;
     
     try {
       const response = await fetch('/api/users', {
@@ -64,6 +66,7 @@ export default function DashboardPage() {
         return false;
       }
       
+      userCheckedRef.current = true;
       return true;
     } catch (err) {
       console.error('Failed to ensure user exists:', err);
