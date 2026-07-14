@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
       console.error('Supabase is not configured. Missing environment variables.');
       return NextResponse.json({ 
         error: 'Database not configured', 
-        message: 'Missing NEXT_PUBLIC_SUPABASE_URL or NEXT_PUBLIC_SUPABASE_ANON_KEY'
+        message: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY'
       }, { status: 500 });
     }
 

@@ -1,376 +1,382 @@
-# KuppiHub - Student Learning Management System
+# KuppiHub
 
-A modern, structured frontend for managing academic modules and student-created supplementary videos (kuppi) built with Next.js and Tailwind CSS.
+> A student learning management platform for sharing and discovering academic resources — kuppi videos, module resources, and more.
 
-## 🎯 What is Kuppi?
+---
 
-"Kuppi" refers to supplementary learning materials created by students to help their peers understand complex topics. These can include:
-- Video explanations
-- Study notes
-- Practice problems
-- Concept summaries
-- Telegram download links
-- Additional learning resources
+## Table of Contents
 
-## 🏗️ System Architecture
+- [What is KuppiHub?](#what-is-kuppihub)
+- [Tech Stack](#tech-stack)
+- [Quick Start (Developers)](#quick-start-developers)
+- [Environment Variables](#environment-variables)
+- [Project Structure](#project-structure)
+- [API Reference](#api-reference)
+- [Database](#database)
+- [Authentication](#authentication)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
 
-The system follows a simplified hierarchical structure:
-1. **Faculty** → **Department** → **Semester** → **Modules** → **Kuppi Videos**
-2. Users can view all available modules for their semester
-3. Each module contains student-created kuppi videos with embedded YouTube players
+---
 
-## 🚀 Features 
+## What is KuppiHub?
 
-### Core Functionality
-- **Simplified Selection**: Faculty → Department → Semester → Modules
-- **Module Discovery**: View all available modules for the semester
-- **Kuppi Browsing**: Browse and view student-created learning materials
-- **YouTube Integration**: Embedded video players for seamless viewing
-- **Resource Sharing**: Access Telegram links and material files
+**KuppiHub** is a web platform built for university students to share and discover *kuppi* — supplementary learning content created by peers. This includes:
 
-### User Experience
-- **Progressive Flow**: Step-by-step selection process
-- **Responsive Design**: Mobile-first approach with Tailwind CSS
-- **Intuitive Navigation**: Clear back buttons and breadcrumbs
-- **Visual Feedback**: Loading states, error handling, and success messages
+- 🎥 **Kuppi videos** – Student-recorded YouTube video explanations per module
+- 📚 **Module resources** – Study notes, PDFs, and links organized in folders per module
+- 🔍 **Module search** – Search and add modules to your personal dashboard
+- 📝 **Reviews & comments** – Rate and comment on kuppi content
+- 👤 **Authentication** – Firebase Auth with Google sign-in
 
-### Content Management
-- **Video URLs**: Multiple video sources (YouTube, etc.)
-- **Telegram Links**: Direct download links
-- **Material Files**: Notes, PDFs, and additional resources
-- **Metadata**: Titles, descriptions, and timestamps
-- **Read-only Access**: Browse and view existing kuppi content
+---
 
-## 📁 Project Structure
+## Tech Stack
 
-```
-src/app/
-├── page.tsx                 # Home page (redirects to faculty)
-├── faculty/page.tsx         # Faculty selection
-├── department/page.tsx      # Department selection
-├── semester/page.tsx       # Semester selection + Module display
-├── module-kuppi/page.tsx   # View kuppi videos for a specific module
-├── dashboard/page.tsx      # Main dashboard with modules
+| Layer | Technology |
+|-------|-----------|
+| Framework | [Next.js 16](https://nextjs.org) (App Router, TypeScript) |
+| Styling | Vanilla CSS + CSS Modules |
+| Auth | [Firebase Auth](https://firebase.google.com/products/auth) (Google sign-in) |
+| Database | [Supabase](https://supabase.com) (PostgreSQL) |
+| Document DB | [MongoDB Atlas](https://cloud.mongodb.com) (kuppi video metadata) |
+| Bot protection | [Cloudflare Turnstile](https://www.cloudflare.com/products/turnstile/) |
+| Deployment | [Vercel](https://vercel.com) |
 
-├── videos/page.tsx         # View all videos for a module
-├── browse-kuppi/page.tsx   # Browse all kuppi videos
-└── my-kuppi/page.tsx      # Manage user's own kuppi
-```
+---
 
-## 🛠️ Technology Stack
-
-- **Frontend**: Next.js 15 with App Router
-- **Styling**: Tailwind CSS 4
-- **Language**: TypeScript
-- **State Management**: React hooks with localStorage
-- **Database**: Supabase PostgreSQL (ready for integration)
-
-## 🗄️ Database Schema
-
-The system is designed to work with the following PostgreSQL tables:
-
-```sql
--- Core tables
-faculties (id, name)
-departments (id, name, faculty_id)
-batches (id, name)
-semesters (id, name)
-students (id, name, faculty_id, department_id, batch_id, semester_id, image_url)
-
--- Module management
-modules (id, code, name, description)
-module_assignments (id, module_id, faculty_id, department_id, batch_id, semester_id)
-student_additional_modules (id, student_id, module_id)
-
--- Video content
-videos (id, module_id, title, youtube_links, telegram_links, material_urls, is_kuppi, student_id, created_at)
-```
-
-## 🚀 Getting Started
+## Quick Start (Developers)
 
 ### Prerequisites
-- Node.js 18+ 
-- npm or yarn
 
-### Installation
+- **Node.js >= 20** — [nodejs.org](https://nodejs.org)
+- **npm >= 10** — bundled with Node.js
+- A code editor (VS Code recommended)
 
-1. **Clone the repository**
-   ```bash
-   git clone <repository-url>
-   cd kuppihub-advanced
-   ```
+### 1. Clone the repository
 
-2. **Install dependencies**
-   ```bash
-   npm install
-   ```
-
-3. **Run the development server**
-   ```bash
-   npm run dev
-   ```
-
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-## 🧑‍💻 Developer Setup (Local Supabase + App)
-
-This project supports a full local Supabase stack using Docker via the Supabase CLI.
-
-### 1) Install Supabase CLI
 ```bash
-npm install -g supabase
+git clone <repository-url>
+cd KuppiHub-Advanced
 ```
 
-### 2) Create your `.env`
-Copy from `env.example` and fill it:
+### 2. Run the setup script
+
+**Linux / macOS:**
 ```bash
-cp env.example .env
+bash setup.sh
 ```
 
-### 3) Sync migrations to Supabase CLI
-```bash
-./scripts/supabase-sync-migrations.sh
+**Windows (PowerShell):**
+```powershell
+powershell -ExecutionPolicy Bypass -File setup.ps1
 ```
 
-### 4) Start local Supabase (Docker)
-```bash
-supabase start
-```
+> **Windows alternative**: If you have [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) installed, you can also just run `bash setup.sh` inside a WSL terminal.
 
-The CLI will print local URLs and keys. Update your `.env` with those values:
-```env
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
-SUPABASE_URL=http://localhost:54321
-SUPABASE_SERVICE_ROLE_KEY=your_local_service_role_key
-```
+The script will:
+- Check your Node.js version
+- Copy `env.example` → `.env` (if `.env` does not exist yet)
+- Install all `npm` dependencies
 
-### 5) Run the app
+### 3. Fill in your `.env`
+
+Open the `.env` file and fill in your credentials. See the [Environment Variables](#environment-variables) section below for where to get each key.
+
+### 4. Start the development server
+
 ```bash
 npm run dev
 ```
 
-App: `http://localhost:3000`
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-### 6) Stop local Supabase
-```bash
-supabase stop
-```
+---
 
-## 🐳 Docker (App Only)
+## Running with Docker
 
-If you want the app running in Docker (using a hosted Supabase):
+> Use this if you want to run the app in a container — for production or consistent environment testing.
+
+### Prerequisites
+- [Docker Desktop](https://www.docker.com/products/docker-desktop/) (Windows / macOS) or Docker Engine (Linux)
+- A filled-in `.env` file (run setup script first)
+
+### Why two types of env vars?
+
+Next.js has two kinds of environment variables:
+
+| Type | Example | When resolved | Exposed to browser? |
+|------|---------|--------------|-------------------|
+| **Public** (`NEXT_PUBLIC_*`) | Firebase client key, Turnstile site key | **Build time** (baked into JS bundle) | ✅ Yes (by design) |
+| **Secret** (no prefix) | Supabase service role key, Firebase private key | **Runtime** | ❌ No (server only) |
+
+This means `NEXT_PUBLIC_*` vars must be available when the Docker image is **built**. The `docker-compose.yml` handles this automatically by reading them from your `.env`.
+
+### Start the container
 
 ```bash
 docker compose up --build
 ```
 
-## 🐳 Docker (Postgres Only, No Supabase CLI)
+Open [http://localhost:3000](http://localhost:3000).
 
-If you only want a local Postgres database (no Supabase services):
+To stop:
+```bash
+docker compose down
+```
+
+### Rebuild after code changes
 
 ```bash
-docker compose -f docker-compose.db.yml up --build
+docker compose up --build
 ```
 
-This will:
-1. Start Postgres on `localhost:5432`
-2. Run all SQL files in `supabase_migrations/` on first startup
+---
 
-Default credentials:
-```text
-DB: kuppihub
-USER: kuppihub
-PASS: kuppihub
+
+## Environment Variables
+
+After running `bash setup.sh`, a `.env` file is created. Fill in the following:
+
+### Firebase (Authentication)
+
+Go to [Firebase Console](https://console.firebase.google.com) → Your project → **Project Settings → General → Your apps → Web app config**:
+
+```env
+NEXT_PUBLIC_FIREBASE_API_KEY=
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=
+NEXT_PUBLIC_FIREBASE_APP_ID=
 ```
 
-Stop and remove data:
-```bash
-docker compose -f docker-compose.db.yml down -v
+For **server-side admin** (Firebase Admin SDK):  
+Go to **Project Settings → Service Accounts → Generate new private key** and download the JSON.
+
+```env
+FIREBASE_PROJECT_ID=          # Same as above
+FIREBASE_CLIENT_EMAIL=        # "client_email" from the JSON
+FIREBASE_PRIVATE_KEY=         # "private_key" from the JSON (keep the \n characters)
 ```
 
-## 🔧 Configuration
+### Supabase (Database)
 
-### Supabase Integration
+Go to [Supabase Dashboard](https://supabase.com/dashboard) → Your project → **Project Settings → API**:
 
-To connect with your Supabase database:
-
-1. **Install Supabase client**
-   ```bash
-   npm install @supabase/supabase-js
-   ```
-
-2. **Create environment variables**
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
-   ```
-
-3. **Replace mock data calls** in each page component with actual Supabase queries
-
-### Local Supabase (Docker via Supabase CLI)
-
-This project can run a full local Supabase stack in Docker using the Supabase CLI.
-
-1. **Install Supabase CLI**
-   ```bash
-   npm install -g supabase
-   ```
-
-2. **Sync migrations**
-   ```bash
-   ./scripts/supabase-sync-migrations.sh
-   ```
-
-3. **Start local Supabase**
-   ```bash
-   supabase start
-   ```
-
-4. **Update `.env` for local**
-   Use the URLs/keys printed by `supabase start` and set:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your_local_anon_key
-   SUPABASE_URL=http://localhost:54321
-   SUPABASE_SERVICE_ROLE_KEY=your_local_service_role_key
-   ```
-
-5. **Run the app**
-   ```bash
-   npm run dev
-   ```
-
-### Example Supabase Query
-
-```typescript
-import { createClient } from '@supabase/supabase-js'
-
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
-
-// Fetch faculties
-const { data: faculties, error } = await supabase
-  .from('faculties')
-  .select('*')
-  .order('name')
+```env
+SUPABASE_URL=https://xxxxxxxxxxxx.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=       # "service_role secret" key (keep private!)
 ```
 
-### Approved Video Email Webhook
+### Cloudflare Turnstile (Bot Protection)
 
-When a `videos` row is approved (`is_approved = true` on insert, or `false -> true` on update), a DB trigger sends a POST request to your email service.
+Go to [Cloudflare Dashboard](https://dash.cloudflare.com) → **Turnstile → Add site**:
 
-1. **Apply migrations**
-   Ensure SQL in `supabase_migrations/` is applied, including:
-   - `20260329_video_approval_email_webhook.sql`
+```env
+NEXT_PUBLIC_TURNSTILE_SITE_KEY=   # Site key (public)
+TURNSTILE_SECRET_KEY=             # Secret key (private)
+```
 
-2. **Update database config values**
-   The trigger reads values from `public.system_config`:
-   - `emaildata_webhook_url`
-   - `emaildata_webhook_secret`
+> **For local testing**: Use the always-passing test keys:
+> - Site key: `1x00000000000000000000AA`
+> - Secret key: `1x0000000000000000000000000000000AA`
 
-   Update them directly in DB when needed:
-   ```sql
-   UPDATE public.system_config
-   SET value = 'https://your-email-endpoint.example', updated_at = now()
-   WHERE name = 'emaildata_webhook_url';
+### MongoDB
 
-   UPDATE public.system_config
-   SET value = 'your_shared_secret', updated_at = now()
-   WHERE name = 'emaildata_webhook_secret';
-   ```
+Go to [MongoDB Atlas](https://cloud.mongodb.com) → Your cluster → **Connect → Drivers**:
 
-3. **Verify requests in email service**
-   The trigger sends headers:
-   - `x-webhook-secret: <emaildata_webhook_secret value>`
-   - `x-webhook-source: kuppihub-db-trigger`
+```env
+MONGODB_URI=mongodb+srv://<user>:<password>@cluster0.xxxxx.mongodb.net/?appName=cluster0
+MONGODB_DB=cluster0
+```
 
-   Validate `x-webhook-secret` on the email endpoint before processing.
-   Payload includes `emails_list` as an array of objects: `{ name, email }`.
+---
 
-## 🎨 Customization
+## Project Structure
 
-### Colors and Themes
-The system uses Tailwind CSS with a consistent color scheme:
-- **Blue**: Primary actions and navigation
-- **Green**: Success states and confirmations
-- **Purple**: Kuppi-related elements
-- **Orange**: Creation and editing actions
-- **Red**: Destructive actions
+```
+KuppiHub-Advanced/
+├── src/
+│   ├── app/
+│   │   ├── api/                  # All Next.js API routes (server-side)
+│   │   │   ├── add-kuppi/        # POST: Create a new kuppi video
+│   │   │   ├── comments/         # GET/POST/DELETE: Kuppi comments & voting
+│   │   │   ├── contact/          # POST: Contact form
+│   │   │   ├── dashboard-modules/# GET: User's personal module list
+│   │   │   ├── hierarchy/        # GET: Faculty→Dept→Semester→Module tree
+│   │   │   ├── kuppi/            # GET: Kuppi video detail + reviews
+│   │   │   ├── kuppis/           # GET: List kuppis for a module
+│   │   │   ├── module-resources/ # GET/POST: Module folder/resource management
+│   │   │   │   ├── folders/      # Folder CRUD
+│   │   │   │   ├── sync-github/  # GitHub webhook sync
+│   │   │   │   └── upload/       # Link submission (Turnstile protected)
+│   │   │   ├── modules/          # GET: Module by code
+│   │   │   ├── modules-by-ids/   # GET: Bulk module fetch
+│   │   │   ├── my-kuppis/        # GET: Authenticated user's kuppis
+│   │   │   ├── notifications/    # Push notification management
+│   │   │   ├── releases/         # GET: Latest GitHub release info
+│   │   │   ├── search/           # GET: Full-text kuppi search
+│   │   │   ├── search-modules/   # GET: Module search
+│   │   │   ├── tutors/           # GET: Tutor listings
+│   │   │   ├── user-dashboard/   # GET/POST: User module sync
+│   │   │   └── users/            # POST: Upsert user record
+│   │   │
+│   │   ├── components/           # Shared UI components (Header, Search, etc.)
+│   │   ├── dashboard/            # /dashboard – Personal module dashboard
+│   │   ├── module-kuppi/         # /module-kuppi/[moduleId] – Module kuppi page
+│   │   ├── module/               # /module/[moduleCode] – Module detail
+│   │   ├── modules/              # /modules – Browse all modules
+│   │   ├── login/                # /login – Sign-in page
+│   │   ├── add-kuppi/            # /add-kuppi – Submit a kuppi video
+│   │   ├── my-kuppis/            # /my-kuppis – Manage own kuppis
+│   │   └── ...                   # Other pages (about, faq, contact, etc.)
+│   │
+│   ├── contexts/                 # React context providers (Auth, etc.)
+│   ├── lib/                      # Shared server/client utilities
+│   │   ├── firebase.ts           # Firebase client init
+│   │   ├── firebase-admin.ts     # Firebase Admin SDK init
+│   │   ├── supabase.ts           # Supabase client init
+│   │   ├── supabase-admin.ts     # Supabase admin (service role) client
+│   │   ├── mongodb.ts            # MongoDB connection
+│   │   ├── auth-fetch.ts         # Authenticated fetch wrapper (adds Firebase token)
+│   │   ├── auth-utils.ts         # Server-side Firebase token verification
+│   │   ├── validation.ts         # Input validation helpers
+│   │   ├── rate-limit.ts         # API rate limiting
+│   │   └── cache-utils.ts        # Cache helpers
+│   ├── types/                    # Shared TypeScript types
+│   └── data/                     # Static data files
+│
+├── supabase_migrations/          # All Supabase SQL migration files (source of truth)
+├── scripts/
+│   └── supabase-sync-migrations.sh  # Helper: copies migrations → supabase/migrations/
+├── public/                       # Static assets
+├── env.example                   # Environment variable template
+├── setup.sh                      # Developer bootstrap script (run this first!)
+├── package.json
+└── next.config.ts
+```
 
-### Component Styling
-Each page uses gradient backgrounds and consistent card layouts:
-- Rounded corners (`rounded-lg`)
-- Subtle shadows (`shadow-lg`)
-- Hover effects (`hover:shadow-xl`)
-- Smooth transitions (`transition-all`)
+---
 
-## 📱 Responsive Design
+## API Reference
 
-The system is fully responsive with:
-- **Mobile-first approach**
-- **Grid layouts** that adapt to screen size
-- **Touch-friendly buttons** and interactions
-- **Optimized spacing** for different devices
+All API routes live under `src/app/api/`. They are standard Next.js App Router route handlers.
 
-## 🔒 Security Considerations
+### Authentication Pattern
 
-- **No authentication required** (as per requirements)
-- **Input validation** on forms
-- **URL sanitization** for external links
-- **XSS prevention** through proper React practices
+Protected routes verify the Firebase ID token passed in the `Authorization` header:
 
-## 🚀 Deployment
+```
+Authorization: Bearer <firebase-id-token>
+```
 
-### Build for Production
+Client code uses `authFetch()` from `src/lib/auth-fetch.ts` which automatically attaches the current user's token.
+
+### Key Endpoints
+
+| Method | Route | Auth | Description |
+|--------|-------|------|-------------|
+| `GET` | `/api/hierarchy` | No | Full faculty→dept→semester→module tree |
+| `GET` | `/api/kuppis?moduleId=` | No | Kuppi videos for a module |
+| `POST` | `/api/add-kuppi` | Yes | Submit a new kuppi video |
+| `GET` | `/api/module-resources?moduleId=` | No | Folders and resources for a module |
+| `POST` | `/api/module-resources/upload` | Yes | Submit a resource link (Turnstile required) |
+| `GET` | `/api/search?q=` | No | Full-text kuppi search |
+| `GET` | `/api/search-modules?q=` | No | Module search |
+| `GET` | `/api/dashboard-modules` | Yes | User's personal module list |
+| `POST` | `/api/users` | Yes | Create/update user record |
+| `GET` | `/api/releases/latest` | No | Latest GitHub release |
+
+---
+
+## Database
+
+### Supabase (PostgreSQL)
+
+All SQL schema and migrations live in `supabase_migrations/`. They must be applied to your Supabase project in chronological order.
+
+**Apply migrations to your Supabase project:**
+
+1. Go to [Supabase Dashboard](https://supabase.com/dashboard) → Your project → **SQL Editor**
+2. Open each `.sql` file from `supabase_migrations/` in order and run them
+
+**Migration files (in order):**
+
+| File | Purpose |
+|------|---------|
+| `databse.sql` | Core schema: faculties, departments, semesters, modules, students, videos |
+| `add_domain_access_control.sql` | Domain allowlist for resource uploads |
+| `20260311_security_*.sql` | RLS policies and security hardening |
+| `20260329_video_approval_email_webhook.sql` | DB trigger for email on video approval |
+| `20260401_enable_rls_for_public_tables.sql` | Enable Row Level Security |
+| `20260527_add_approved_to_students.sql` | Student approval flag |
+| `20260527_module_resource_library.sql` | Module resource folders & files table |
+| `20260529_add_unique_constraint_to_resources.sql` | Prevent duplicate resource submissions |
+
+### MongoDB Atlas
+
+Used to store kuppi video metadata (titles, YouTube links, Telegram links, review data). Connection is managed by `src/lib/mongodb.ts`.
+
+---
+
+## Authentication
+
+KuppiHub uses **Firebase Authentication** with Google sign-in.
+
+- **Client-side**: `src/lib/firebase.ts` — `getAuth()`, `signInWithPopup()`
+- **Server-side**: `src/lib/firebase-admin.ts` — verifies ID tokens using `verifyIdToken()`
+- **Auth context**: `src/contexts/` — `useAuth()` hook for components
+
+The auth flow:
+1. User clicks "Sign in with Google"
+2. Firebase returns an ID token
+3. ID token is sent in `Authorization: Bearer <token>` headers
+4. API routes call `verifyFirebaseToken()` from `src/lib/auth-utils.ts`
+
+---
+
+## Deployment
+
+The project is deployed on **Vercel** (recommended).
+
+### Deploy to Vercel
+
+1. Push your code to GitHub
+2. Go to [vercel.com](https://vercel.com) → **New Project** → import your repo
+3. Set all environment variables from `.env` in the Vercel dashboard (**Settings → Environment Variables**)
+4. Deploy — Vercel auto-deploys on every push to `main`
+
+### Manual production build (to test locally)
+
 ```bash
 npm run build
 npm start
 ```
 
-### Vercel Deployment
-1. Connect your GitHub repository to Vercel
-2. Set environment variables
-3. Deploy automatically on push
+---
 
-### Other Platforms
-The system can be deployed to any platform that supports Next.js:
-- Netlify
-- AWS Amplify
-- DigitalOcean App Platform
-- Railway
+## npm Scripts
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-This project is licensed under the MIT License.
-
-## 🆘 Support
-
-For questions or issues:
-1. Check the documentation
-2. Review existing issues
-3. Create a new issue with detailed information
-
-## 🔮 Future Enhancements
-
-- **User Authentication**: Login and user profiles
-- **Real-time Updates**: Live notifications and chat
-- **Advanced Search**: Full-text search and filters
-- **Analytics Dashboard**: Usage statistics and insights
-- **Mobile App**: React Native companion app
-- **API Integration**: RESTful API for external access
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server at http://localhost:3000 |
+| `npm run build` | Build production bundle |
+| `npm start` | Start production server (after build) |
+| `npm run lint` | Run ESLint |
 
 ---
 
-**Built with ❤️ for the student community**
+## Contributing
+
+1. Fork the repository
+2. Run `bash setup.sh` to set up your local environment
+3. Fill in your `.env`
+4. Create a feature branch: `git checkout -b feature/my-feature`
+5. Make your changes
+6. Test locally: `npm run dev`
+7. Run a build to confirm no errors: `npm run build`
+8. Open a pull request
+
+---
+
+*Built with ❤️ for the student community*

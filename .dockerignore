@@ -5,6 +5,8 @@ node_modules
 .env.*
 *.log
 *.pem
-*.key
-Dockerfile
-docker-compose*.yml
+tsconfig.tsbuildinfo
+debug-exports
+.agents
+.antigravitycli
+.codex
