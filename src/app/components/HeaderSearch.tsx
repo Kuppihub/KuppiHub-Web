@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
+import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -35,6 +36,7 @@ function readLocalDashboardModules(): DashboardModule[] {
 
 export default function HeaderSearch({ variant }: HeaderSearchProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<Module[]>([]);
   const [loading, setLoading] = useState(false);
@@ -297,9 +299,24 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" onClick={(e) => e.stopPropagation()}>
                 {results.map((mod: Module) => (
-                  <div 
-                    key={mod.id} 
-                    className="p-3.5 sm:p-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-md sm:shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between h-full saturate-150"
+                  <div
+                    key={mod.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => {
+                      setSearchOpen(false);
+                      setQuery("");
+                      router.push(`/module-kuppi/${mod.id}`);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        setSearchOpen(false);
+                        setQuery("");
+                        router.push(`/module-kuppi/${mod.id}`);
+                      }
+                    }}
+                    className="p-3.5 sm:p-5 bg-white/10 backdrop-blur-md border border-white/20 rounded-xl shadow-md sm:shadow-lg hover:bg-white/15 hover:border-white/30 hover:shadow-xl transition-all duration-300 hover:scale-[1.01] flex flex-col justify-between h-full saturate-150 cursor-pointer"
                   >
                     <div>
                       <p className="font-bold text-blue-300 text-xs sm:text-sm tracking-wider uppercase">{mod.code}</p>
@@ -308,7 +325,11 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
                     <div>
                       <p className="text-xs sm:text-sm text-white/70 mt-2.5 sm:mt-3.5 font-medium flex items-center gap-1.5">📹 {mod.video_count} video{mod.video_count !== 1 ? 's' : ''}</p>
                       <button
-                        onClick={() => handleAddToDashboard(mod)}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleAddToDashboard(mod);
+                        }}
                         disabled={addedModules.has(mod.id)}
                         className={`mt-3 sm:mt-4 w-full py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-bold transition-all duration-300 cursor-pointer ${
                           addedModules.has(mod.id)
