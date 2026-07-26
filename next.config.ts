@@ -2,6 +2,9 @@ import type { NextConfig } from "next";
 
 const nextConfig = {
   output: 'standalone',
+  experimental: {
+    optimizePackageImports: ['@mui/material', '@mui/icons-material', 'lucide-react'],
+  },
   images: {
     remotePatterns: [
       {

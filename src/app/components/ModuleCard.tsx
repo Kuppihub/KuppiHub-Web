@@ -1,7 +1,6 @@
 "use client";
 
 import React from "react";
-import { motion } from "framer-motion";
 import {
   Card,
   CardActionArea,
@@ -26,7 +25,6 @@ export interface ModuleData {
 
 interface ModuleCardProps {
   moduleData: ModuleData;
-  index: number;
   editMode: boolean;
   onRemove: (moduleId: number) => void;
   onRemoveWithEvent: (e: React.MouseEvent, moduleId: number) => void;
@@ -35,7 +33,6 @@ interface ModuleCardProps {
 
 export default function ModuleCard({
   moduleData,
-  index,
   editMode,
   onRemove,
   onRemoveWithEvent,
@@ -44,16 +41,12 @@ export default function ModuleCard({
   const m = moduleData;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04 }}
-      style={{ height: "100%" }}
-    >
+    <div style={{ height: "100%" }}>
       <Card
         variant="outlined"
         sx={{
           height: "100%",
+          minHeight: 140,
           borderRadius: 4,
           border: "1px solid rgba(255, 255, 255, 0.4)",
           background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.12))",
@@ -174,6 +167,6 @@ export default function ModuleCard({
           </CardContent>
         </CardActionArea>
       </Card>
-    </motion.div>
+    </div>
   );
 }

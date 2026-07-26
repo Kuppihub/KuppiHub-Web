@@ -7,7 +7,6 @@ import "./globals.css";
 import Footer from "./components/Footer";
 import Header from "./components/Header";
 import ScrollToTopButton from "./components/ScrollToTopButton";
-import NotificationSnackbar from "./components/NotificationSnackbar";
 // import AppDownloadBanner from "./components/AppDownloadBanner";
 // import LiveCounter from "./components/LiveCounter"; // Temporarily disabled
 import ServiceWorkerRegistrar from "./components/ServiceWorkerRegistrar";
@@ -72,6 +71,13 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.json" />
 
+        <link rel="preconnect" href="https://login.kuppihub.org" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://login.kuppihub.org" />
+        <link rel="preconnect" href="https://apis.google.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://apis.google.com" />
+        <link rel="preconnect" href="https://www.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://www.gstatic.com" />
+
         <Script id="ld-json-organization" type="application/ld+json">
           {JSON.stringify({
             "@context": "https://schema.org",
@@ -95,26 +101,10 @@ export default function RootLayout({
             ],
           })}
         </Script>
-
-
-        <Script
-          async
-          src="https://www.googletagmanager.com/gtag/js?id=G-68J1S4VW95"
-          strategy="afterInteractive"
-        />
-        <Script id="gtag-G-68J1S4VW95" strategy="afterInteractive">
-          {`
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-68J1S4VW95');
-`}
-        </Script>
-
       </head>
 
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gray-50 min-h-screen flex flex-col`}
+        className={`${geistSans.variable} ${geistMono.variable} ${geistSans.className} antialiased bg-gray-50 min-h-screen flex flex-col`}
       >
         <Providers>
           <ServiceWorkerRegistrar />
@@ -122,7 +112,7 @@ export default function RootLayout({
           {/* <AppDownloadBanner /> */}
           <Header />
 
-          <main className="flex-1">
+          <main className="flex-1 min-h-0">
             <Suspense fallback={<Preloader />}>{children}</Suspense>
           </main>
 
@@ -130,23 +120,21 @@ export default function RootLayout({
           <ScrollToTopButton />
         </Providers>
 
-        {/* <NotificationSnackbar /> */}
-
-        {/* ✅ Google AdSense */}
+        {/* Google AdSense — deferred off critical path */}
         <Script
           async
           src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4338559761379667"
           crossOrigin="anonymous"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
 
-        {/* ✅ Google Analytics */}
+        {/* Google Analytics — single property, deferred */}
         <Script
           async
           src="https://www.googletagmanager.com/gtag/js?id=G-2VZ3W2SDG4"
-          strategy="afterInteractive"
+          strategy="lazyOnload"
         />
-        <Script id="google-analytics" strategy="afterInteractive">
+        <Script id="google-analytics" strategy="lazyOnload">
           {`
             window.dataLayer = window.dataLayer || [];
             function gtag(){dataLayer.push(arguments);}

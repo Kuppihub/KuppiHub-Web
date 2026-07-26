@@ -21,7 +21,7 @@ export default function Header() {
   );
 
   return (
-    <header className="bg-gradient-to-r from-[#bfdbfe]/90 via-[#c4b5fd]/90 to-[#3b82f6]/90 sm:bg-none sm:bg-white/15 backdrop-blur-xl border-b border-white/25 text-white sticky top-0 z-50 shadow-sm saturate-150">
+    <header className="bg-gradient-to-r from-[#bfdbfe] via-[#c4b5fd] to-[#3b82f6] sm:bg-none sm:bg-white/15 sm:backdrop-blur-xl border-b border-white/25 text-white sticky top-0 z-50 shadow-sm saturate-150 min-h-16">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center h-16 gap-4">
           {/* Logo */}

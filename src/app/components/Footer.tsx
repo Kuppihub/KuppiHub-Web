@@ -2,7 +2,7 @@ import Link from 'next/link';
 
 export default function Footer() {
   return (
-    <footer className="bg-white/15 backdrop-blur-xl border-t border-white/30 text-gray-800 py-8 saturate-150">
+    <footer className="bg-white/80 sm:bg-white/15 sm:backdrop-blur-xl border-t border-white/30 text-gray-800 py-8 saturate-150 min-h-[220px] md:min-h-[200px]">
       <div className="max-w-5xl mx-auto px-6">
         <div className="flex flex-col md:flex-row md:justify-between items-center gap-6">
           {/* Logo and Description */}
@@ -34,37 +34,37 @@ export default function Footer() {
           <div className="flex flex-wrap justify-center gap-3 text-sm">
             <Link
               href="/"
-              className="bg-white/20 border border-white/30 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
+              className="bg-white/40 sm:bg-white/20 border border-white/30 sm:backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/55 sm:hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
             >
               Home
             </Link>
             <Link
               href="/about"
-              className="bg-white/20 border border-white/30 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
+              className="bg-white/40 sm:bg-white/20 border border-white/30 sm:backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/55 sm:hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
             >
               About
             </Link>
             <Link
               href="/contact"
-              className="bg-white/20 border border-white/30 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
+              className="bg-white/40 sm:bg-white/20 border border-white/30 sm:backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/55 sm:hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
             >
               Contact
             </Link>
             <Link
               href="/privacy-policy"
-              className="bg-white/20 border border-white/30 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
+              className="bg-white/40 sm:bg-white/20 border border-white/30 sm:backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/55 sm:hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
             >
               Privacy
             </Link>
             <Link
               href="/help"
-              className="bg-white/20 border border-white/30 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
+              className="bg-white/40 sm:bg-white/20 border border-white/30 sm:backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/55 sm:hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
             >
               Help
             </Link>
             <Link
               href="/faq"
-              className="bg-white/20 border border-white/30 backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
+              className="bg-white/40 sm:bg-white/20 border border-white/30 sm:backdrop-blur-md px-3.5 py-1.5 rounded-xl text-xs font-semibold hover:bg-white/55 sm:hover:bg-white/35 text-gray-900 transition-all duration-300 hover:scale-105"
             >
               FAQ
             </Link>

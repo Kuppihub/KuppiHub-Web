@@ -97,7 +97,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const previousAuthUidRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    let idleCallbackId: number | undefined;
+    let timeoutId: ReturnType<typeof setTimeout> | undefined;
+
+    const clearPendingSync = () => {
+      if (idleCallbackId !== undefined && typeof window !== 'undefined' && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleCallbackId);
+        idleCallbackId = undefined;
+      }
+      if (timeoutId !== undefined) {
+        clearTimeout(timeoutId);
+        timeoutId = undefined;
+      }
+    };
+
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      clearPendingSync();
+
       const nextUid = firebaseUser?.uid ?? null;
       // Clear guest/user caches whenever identity changes (guest <-> user, or user A <-> user B).
       // Skip the first auth callback so a page refresh keeps the current identity's cache.
@@ -110,34 +126,47 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       previousAuthUidRef.current = nextUid;
 
       setUser(firebaseUser);
-      
-      // Sync verified users to Supabase on auth state change and fetch user data
-      if (firebaseUser && firebaseUser.emailVerified) {
-        const providerId = firebaseUser.providerData[0]?.providerId;
-        let provider: 'google' | 'github' | 'email' = 'email';
-        if (providerId === 'google.com') {
-          provider = 'google';
-        } else if (providerId === 'github.com') {
-          provider = 'github';
-        }
-        
-        // Sync and get updated user data
+      setLoading(false);
+
+      // Defer non-critical Supabase sync so first paint is not blocked.
+      if (!(firebaseUser && firebaseUser.emailVerified)) {
+        setSupabaseUser(null);
+        return;
+      }
+
+      const providerId = firebaseUser.providerData[0]?.providerId;
+      let provider: 'google' | 'github' | 'email' = 'email';
+      if (providerId === 'google.com') {
+        provider = 'google';
+      } else if (providerId === 'github.com') {
+        provider = 'github';
+      }
+
+      const syncProfile = async () => {
         const syncedUser = await syncUserToSupabase(firebaseUser, provider);
         if (syncedUser) {
           setSupabaseUser(syncedUser);
-        } else {
-          // Fallback: try to fetch user data directly
-          const fetchedUser = await fetchSupabaseUser(firebaseUser.uid);
-          setSupabaseUser(fetchedUser);
+          return;
         }
+        const fetchedUser = await fetchSupabaseUser(firebaseUser.uid);
+        setSupabaseUser(fetchedUser);
+      };
+
+      if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+        idleCallbackId = window.requestIdleCallback(() => {
+          void syncProfile();
+        }, { timeout: 2000 });
       } else {
-        setSupabaseUser(null);
+        timeoutId = setTimeout(() => {
+          void syncProfile();
+        }, 1);
       }
-      
-      setLoading(false);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearPendingSync();
+      unsubscribe();
+    };
   }, []);
 
   const signInWithGoogle = async () => {

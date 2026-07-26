@@ -1,28 +1,18 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
-import { motion } from "framer-motion";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   Box,
   Button,
-  Card,
-  CardActionArea,
-  CardContent,
-  Chip,
-  IconButton,
   LinearProgress,
   Paper,
-  Stack,
   Typography,
   CircularProgress,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import EditIcon from "@mui/icons-material/Edit";
 import SchoolIcon from "@mui/icons-material/School";
-import ModuleSelector from "../components/ModuleSelector";
-import Preloader from "../components/Preloader";
 import ModuleCard, { ModuleData } from "../components/ModuleCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkAndManageCacheExpiration } from "@/lib/cache-utils";
@@ -33,11 +23,10 @@ interface DashboardCachePayload {
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { user, loading: authLoading, signInWithGoogle } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [modules, setModules] = useState<ModuleData[] | null>(null);
   const [editMode, setEditMode] = useState(false);
   const [syncing, setSyncing] = useState(false);
-  const [selectorOpen, setSelectorOpen] = useState(false);
   const userCheckedRef = useRef(false);
   const dashboardCacheKey = `dashboard-cache:${user?.uid ?? "guest"}`;
 
@@ -312,58 +301,8 @@ export default function DashboardPage() {
     setEditMode(!editMode);
   };
 
-  // Handle adding module from ModuleSelector
-  interface SelectorModule {
-    module_id: number;
-    module: {
-      id: number;
-      code: string;
-      name: string;
-      description?: string;
-    };
-    video_count?: number;
-  }
-
-  const handleAddModuleFromSelector = async (selectedModule: SelectorModule) => {
-    const newModule: ModuleData = {
-      module_id: selectedModule.module_id,
-      module: {
-        code: selectedModule.module.code,
-        name: selectedModule.module.name,
-        description: selectedModule.module.description || "",
-      },
-      video_count: selectedModule.video_count,
-    };
-
-    const currentModules = modules || [];
-    
-    // Check if already exists
-    if (currentModules.some(m => m.module_id === newModule.module_id)) {
-      return;
-    }
-
-    const updated = [...currentModules, newModule];
-    setModules(updated);
-    saveModulesToLocal(updated);
-    sessionStorage.setItem(
-      dashboardCacheKey,
-      JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
-    );
-
-    // Sync to cloud if logged in
-    if (user?.uid) {
-      await syncToCloud(updated);
-    }
-  };
-
-  // Get set of added module IDs for the selector
-  const addedModuleIds = new Set((modules || []).map(m => m.module_id));
-  const totalVideos = (modules || []).reduce((sum, module) => sum + (module.video_count || 0), 0);
-
-
-
   return (
-    <div className="min-h-screen py-6 sm:py-12 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-0 py-6 sm:py-12 px-3 sm:px-4 bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="max-w-7xl mx-auto">
         <Paper
           elevation={0}
@@ -483,13 +422,11 @@ export default function DashboardPage() {
           </Box>
         ) : modules.length === 0 ? (
           <Paper
-            initial={{ opacity: 0, scale: 0.95 }}
-            component={motion.div}
-            animate={{ opacity: 1, scale: 1 }}
             sx={{
               textAlign: "center",
               py: 6,
               px: 3,
+              minHeight: 280,
               borderRadius: 4,
               border: "1px solid rgba(255, 255, 255, 0.4)",
               background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15))",
@@ -535,11 +472,10 @@ export default function DashboardPage() {
           </Paper>
         ) : (
           <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-            {modules.map((m, i) => (
+            {modules.map((m) => (
               <ModuleCard
                 key={m.module_id}
                 moduleData={m}
-                index={i}
                 editMode={editMode}
                 onRemove={removeModule}
                 onRemoveWithEvent={handleRemoveModule}
@@ -549,16 +485,6 @@ export default function DashboardPage() {
           </Box>
         )}
       </div>
-
-      {/* Module Selector Modal (Temporarily disabled - redirect to search) */}
-      {false && (
-        <ModuleSelector
-          isOpen={selectorOpen}
-          onClose={() => setSelectorOpen(false)}
-          onAddModule={handleAddModuleFromSelector}
-          addedModuleIds={addedModuleIds}
-        />
-      )}
     </div>
   );
 }
