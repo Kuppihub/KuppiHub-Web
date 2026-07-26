@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useRef, useState } from 'react';
 import { 
   User, 
   signInWithPopup, 
@@ -13,6 +13,7 @@ import {
   updateProfile
 } from 'firebase/auth';
 import { auth, googleProvider, githubProvider } from '@/lib/firebase';
+import { clearClientCaches } from '@/lib/cache-utils';
 
 // Supabase user interface
 interface SupabaseUser {
@@ -93,9 +94,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const previousAuthUidRef = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const nextUid = firebaseUser?.uid ?? null;
+      // Clear guest/user caches whenever identity changes (guest <-> user, or user A <-> user B).
+      // Skip the first auth callback so a page refresh keeps the current identity's cache.
+      if (
+        previousAuthUidRef.current !== undefined &&
+        previousAuthUidRef.current !== nextUid
+      ) {
+        clearClientCaches();
+      }
+      previousAuthUidRef.current = nextUid;
+
       setUser(firebaseUser);
       
       // Sync verified users to Supabase on auth state change and fetch user data

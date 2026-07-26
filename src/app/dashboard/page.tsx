@@ -191,14 +191,16 @@ export default function DashboardPage() {
             );
           } else {
             setModules([]);
+            saveModulesToLocal([]);
             sessionStorage.setItem(
               dashboardCacheKey,
               JSON.stringify({ modules: [] } satisfies DashboardCachePayload)
             );
           }
         } else {
-          // No modules in database for this user
+          // No modules in database for this user — clear any stale guest local cache
           setModules([]);
+          saveModulesToLocal([]);
           sessionStorage.setItem(
             dashboardCacheKey,
             JSON.stringify({ modules: [] } satisfies DashboardCachePayload)
@@ -221,7 +223,7 @@ export default function DashboardPage() {
     initializeModules();
   }, [user, authLoading, loadFromCloud, loadModulesFromLocal, fetchModuleDetails, saveModulesToLocal, dashboardCacheKey]);
 
-  // Listen for updates from HeaderSearch
+  // Listen for updates from HeaderSearch and auth cache clears
   useEffect(() => {
     if (typeof window === "undefined") return;
     
@@ -238,11 +240,17 @@ export default function DashboardPage() {
         await syncToCloud(parsed);
       }
     };
+
+    const handleAuthCachesCleared = () => {
+      setModules([]);
+    };
     
     window.addEventListener("dashboardModulesUpdated", handleUpdate);
+    window.addEventListener("authCachesCleared", handleAuthCachesCleared);
     
     return () => {
       window.removeEventListener("dashboardModulesUpdated", handleUpdate);
+      window.removeEventListener("authCachesCleared", handleAuthCachesCleared);
     };
   }, [user?.uid, loadModulesFromLocal, syncToCloud, dashboardCacheKey]);
 

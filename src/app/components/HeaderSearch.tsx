@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
@@ -23,6 +23,16 @@ interface HeaderSearchProps {
   variant?: "desktop" | "mobile";
 }
 
+function readLocalDashboardModules(): DashboardModule[] {
+  try {
+    const raw = localStorage.getItem("dashboardModules");
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export default function HeaderSearch({ variant }: HeaderSearchProps) {
   const { user } = useAuth();
   const [query, setQuery] = useState("");
@@ -31,6 +41,31 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [addedModules, setAddedModules] = useState<Set<number>>(new Set());
   const [mounted, setMounted] = useState(false);
+
+  const loadAddedModules = useCallback(async () => {
+    if (typeof window === "undefined") return;
+
+    try {
+      if (user?.uid) {
+        const res = await fetch(
+          `/api/user-dashboard?firebase_uid=${encodeURIComponent(user.uid)}`
+        );
+        if (res.ok) {
+          const data = await res.json();
+          const ids: number[] = Array.isArray(data.moduleIds) ? data.moduleIds : [];
+          setAddedModules(new Set(ids));
+          return;
+        }
+      }
+
+      const parsed = readLocalDashboardModules();
+      setAddedModules(new Set(parsed.map((m) => m.module_id)));
+    } catch (err) {
+      console.error(err);
+      const parsed = readLocalDashboardModules();
+      setAddedModules(new Set(parsed.map((m) => m.module_id)));
+    }
+  }, [user?.uid]);
 
   useEffect(() => {
     setMounted(true);
@@ -44,9 +79,14 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
         setSearchOpen(true);
       }
     };
+    const handleAuthCachesCleared = () => {
+      setAddedModules(new Set());
+    };
     window.addEventListener("openHeaderSearch", handleOpen);
+    window.addEventListener("authCachesCleared", handleAuthCachesCleared);
     return () => {
       window.removeEventListener("openHeaderSearch", handleOpen);
+      window.removeEventListener("authCachesCleared", handleAuthCachesCleared);
     };
   }, [variant]);
 
@@ -57,18 +97,11 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
     }
   };
 
-  // Load already added modules when search opens
+  // Load already added modules for the current auth identity
   useEffect(() => {
-    if (searchOpen && typeof window !== "undefined") {
-      try {
-        const raw = localStorage.getItem("dashboardModules");
-        const parsed: DashboardModule[] = raw ? JSON.parse(raw) : [];
-        setAddedModules(new Set(parsed.map(m => m.module_id)));
-      } catch (err) {
-        console.error(err);
-      }
-    }
-  }, [searchOpen]);
+    if (!searchOpen) return;
+    loadAddedModules();
+  }, [searchOpen, loadAddedModules]);
 
   useEffect(() => {
     if (query.length < 2) {
@@ -103,12 +136,31 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
     if (typeof window === "undefined") return;
     
     try {
-      const raw = localStorage.getItem("dashboardModules");
-      const existing: DashboardModule[] = raw ? JSON.parse(raw) : [];
-      
-      // Check if already added
-      if (existing.some(m => m.module_id === mod.id)) {
-        return;
+      let existing: DashboardModule[] = [];
+
+      if (user?.uid) {
+        const dashRes = await fetch(
+          `/api/user-dashboard?firebase_uid=${encodeURIComponent(user.uid)}`
+        );
+        if (dashRes.ok) {
+          const data = await dashRes.json();
+          const ids: number[] = Array.isArray(data.moduleIds) ? data.moduleIds : [];
+          if (ids.includes(mod.id)) {
+            setAddedModules(new Set(ids));
+            return;
+          }
+          if (ids.length > 0) {
+            const detailsRes = await fetch(`/api/dashboard-modules?ids=${ids.join(",")}`);
+            existing = detailsRes.ok ? await detailsRes.json() : [];
+            if (!Array.isArray(existing)) existing = [];
+          }
+        }
+      } else {
+        existing = readLocalDashboardModules();
+        if (existing.some((m) => m.module_id === mod.id)) {
+          setAddedModules(new Set(existing.map((m) => m.module_id)));
+          return;
+        }
       }
       
       // Add new module
@@ -148,7 +200,7 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
       
       // Always save to localStorage
       localStorage.setItem("dashboardModules", JSON.stringify(existing));
-      setAddedModules(prev => new Set([...prev, mod.id]));
+      setAddedModules(new Set(existing.map((m) => m.module_id)));
       
       // Dispatch custom event to notify dashboard
       window.dispatchEvent(new CustomEvent("dashboardModulesUpdated"));

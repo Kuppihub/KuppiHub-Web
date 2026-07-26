@@ -4,6 +4,31 @@
 
 const SESSION_TIMER_KEY = 'kuppihub_session_timer';
 const CACHE_EXPIRATION_MS = 3 * 60 * 1000; // 3 minutes
+const DASHBOARD_MODULES_KEY = 'dashboardModules';
+
+function clearPrefixedSessionKeys(prefixes: string[]) {
+  const keysToRemove: string[] = [];
+  for (let i = 0; i < window.sessionStorage.length; i++) {
+    const key = window.sessionStorage.key(i);
+    if (key && prefixes.some((prefix) => key.startsWith(prefix))) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+}
+
+/**
+ * Clears guest/user client caches that must not leak across auth identity changes.
+ * Call on login and logout so "already added" / dashboard state always match the current user.
+ */
+export function clearClientCaches(): void {
+  if (typeof window === 'undefined') return;
+
+  window.localStorage.removeItem(DASHBOARD_MODULES_KEY);
+  clearPrefixedSessionKeys(['dashboard-cache:', 'module-kuppi-cache:']);
+  window.sessionStorage.removeItem(SESSION_TIMER_KEY);
+  window.dispatchEvent(new CustomEvent('authCachesCleared'));
+}
 
 /**
  * Checks if the global cache expiration timer in sessionStorage has expired.
@@ -23,16 +48,7 @@ export function checkAndManageCacheExpiration(): boolean {
     if (!isNaN(timerVal) && now - timerVal > CACHE_EXPIRATION_MS) {
       // Cache has expired! Update the session timer to now.
       window.sessionStorage.setItem(SESSION_TIMER_KEY, now.toString());
-
-      // Clear all cached sessionStorage keys for dashboard and module pages.
-      const keysToRemove: string[] = [];
-      for (let i = 0; i < window.sessionStorage.length; i++) {
-        const key = window.sessionStorage.key(i);
-        if (key && (key.startsWith('dashboard-cache:') || key.startsWith('module-kuppi-cache:'))) {
-          keysToRemove.push(key);
-        }
-      }
-      keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+      clearPrefixedSessionKeys(['dashboard-cache:', 'module-kuppi-cache:']);
       return true; // Cache was expired and cleared
     }
   } else {
