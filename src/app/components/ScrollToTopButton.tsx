@@ -6,23 +6,32 @@ export default function ScrollToTopButton() {
   const [scrollPercent, setScrollPercent] = useState(0);
 
   useEffect(() => {
-    const handleScroll = () => {
+    let animationFrame: number | null = null;
+
+    const updateScrollState = () => {
       const scrollY = window.scrollY;
       const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-
-      // Safe scroll percentage calculation
       const scrolled = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
 
       setScrollPercent(scrolled);
       setIsVisible(scrollY > 300);
     };
 
-    window.addEventListener('scroll', handleScroll);
+    const handleScroll = () => {
+      if (animationFrame !== null) return;
+      animationFrame = window.requestAnimationFrame(() => {
+        animationFrame = null;
+        updateScrollState();
+      });
+    };
 
-    // Initial check in case page is already scrolled
-    handleScroll();
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    updateScrollState();
 
-    return () => window.removeEventListener('scroll', handleScroll);
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (animationFrame !== null) window.cancelAnimationFrame(animationFrame);
+    };
   }, []);
 
   const scrollToTop = () => {
@@ -43,8 +52,9 @@ export default function ScrollToTopButton() {
   return (
     <button
       onClick={scrollToTop}
-      className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full bg-white/20 backdrop-blur-lg border border-white/30 text-blue-900 shadow-xl 
-                  transition-all duration-500 ease-in-out hover:bg-white/30 active:scale-95 transform hover:scale-110
+      className={`fixed bottom-6 right-6 z-50 w-14 h-14 rounded-full border border-white/30 text-blue-900 shadow-md sm:shadow-xl
+                  bg-white/90 max-sm:backdrop-blur-none sm:bg-white/20 sm:backdrop-blur-lg
+                  transition-all duration-500 ease-in-out hover:bg-white/95 sm:hover:bg-white/30 active:scale-95 transform sm:hover:scale-110
                   flex items-center justify-center
                   ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10 pointer-events-none'}`}
       aria-label="Scroll to top"

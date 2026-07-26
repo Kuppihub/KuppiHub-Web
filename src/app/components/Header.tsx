@@ -181,7 +181,7 @@ export default function Header() {
 
         {/* Mobile Menu */}
         <div
-          className={`sm:hidden bg-gradient-to-br from-blue-50/95 to-indigo-100/95 backdrop-blur-2xl border-t border-white/40 shadow-2xl overflow-hidden transform ease-in-out 
+          className={`sm:hidden bg-blue-50 border-t border-white/40 shadow-lg overflow-hidden transform ease-in-out 
                       transition-all duration-300
                       ${isMenuOpen ? 'max-h-[1000px] opacity-100 scale-100' : 'max-h-0 opacity-0 scale-95'}`}
         >

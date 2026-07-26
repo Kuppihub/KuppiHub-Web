@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import {
   Card,
   CardActionArea,
@@ -31,7 +31,7 @@ interface ModuleCardProps {
   onClick: (moduleId: number) => void;
 }
 
-export default function ModuleCard({
+export default memo(function ModuleCard({
   moduleData,
   editMode,
   onRemove,
@@ -41,7 +41,7 @@ export default function ModuleCard({
   const m = moduleData;
 
   return (
-    <div style={{ height: "100%" }}>
+    <div className="cv-card" style={{ height: "100%" }}>
       <Card
         variant="outlined"
         sx={{
@@ -49,19 +49,28 @@ export default function ModuleCard({
           minHeight: 140,
           borderRadius: 4,
           border: "1px solid rgba(255, 255, 255, 0.4)",
-          background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.12))",
-          backdropFilter: "blur(20px) saturate(160%)",
-          boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+          background: {
+            xs: "rgba(255, 255, 255, 0.92)",
+            sm: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.12))",
+          },
+          backdropFilter: { xs: "none", sm: "blur(20px) saturate(160%)" },
+          WebkitBackdropFilter: { xs: "none", sm: "blur(20px) saturate(160%)" },
+          boxShadow: {
+            xs: "0 2px 10px rgba(15, 23, 42, 0.08)",
+            sm: "0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+          },
           overflow: "hidden",
           transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
-          "&:hover": editMode
-            ? {}
-            : {
-                background: "linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.18))",
-                borderColor: "rgba(255, 255, 255, 0.55)",
-                boxShadow: "0 12px 40px 0 rgba(31, 38, 135, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
-                transform: "translateY(-4px) scale(1.01)",
-              },
+          "@media (hover: hover) and (pointer: fine)": {
+            "&:hover": editMode
+              ? {}
+              : {
+                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.18))",
+                  borderColor: "rgba(255, 255, 255, 0.55)",
+                  boxShadow: "0 12px 40px 0 rgba(31, 38, 135, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
+                  transform: "translateY(-4px) scale(1.01)",
+                },
+          },
         }}
       >
         <CardActionArea
@@ -88,8 +97,9 @@ export default function ModuleCard({
                   color: editMode ? "#dc2626" : "#1d4ed8",
                   border: "1px solid",
                   borderColor: editMode ? "rgba(239, 68, 68, 0.25)" : "rgba(59, 130, 246, 0.25)",
-                  boxShadow: "inset 0 1px 1px rgba(255, 255, 255, 0.4)",
-                  backdropFilter: "blur(4px)",
+                  boxShadow: { xs: "none", sm: "inset 0 1px 1px rgba(255, 255, 255, 0.4)" },
+                  backdropFilter: { xs: "none", sm: "blur(4px)" },
+                  WebkitBackdropFilter: { xs: "none", sm: "blur(4px)" },
                   flexShrink: 0,
                 }}
               >
@@ -169,4 +179,4 @@ export default function ModuleCard({
       </Card>
     </div>
   );
-}
+});

@@ -30,3 +30,9 @@ body {
   /* fallback color if gradient not supported */
   background-color: #3b82f6;
 }
+
+/* Skip layout/paint for off-screen cards — no visual change when on screen */
+.cv-card {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 180px;
+}

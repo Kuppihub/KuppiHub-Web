@@ -35,6 +35,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { getIdToken } from '@/lib/auth-utils';
 import { checkAndManageCacheExpiration, forceExpireCache } from '@/lib/cache-utils';
 import ResourceUploadDialog from './components/ResourceUploadDialog';
+import { blurFromSm, finePointerHover, glassCardSx, glassPanelSx, glassYearPanelSx } from '@/lib/mobile-safe-glass';
 
 
 type ResourceCategory = {
@@ -333,11 +334,11 @@ export default function ModuleKuppiPage() {
   }, [searchParams, didLoadCategories]);
 
   const handleBack = () => router.push(entryPathRef.current);
-  const handleToggleVideo = (id: number) => {
+  const handleToggleVideo = useCallback((id: number) => {
     setOpenVideoIds((prev) => (
       prev.includes(id) ? prev.filter((videoId) => videoId !== id) : [...prev, id]
     ));
-  };
+  }, []);
 
   const getReferenceDate = (video: Video) => video.published_at ?? video.created_at;
   const getReferenceTimestamp = (video: Video) => {
@@ -475,9 +476,7 @@ export default function ModuleKuppiPage() {
             borderRight: { xs: 'none', sm: '1px solid rgba(255, 255, 255, 0.4)' },
             borderTop: '1px solid rgba(255, 255, 255, 0.4)',
             borderBottom: '1px solid rgba(255, 255, 255, 0.4)',
-            background: 'linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.15))', 
-            backdropFilter: 'blur(20px) saturate(160%)', 
-            boxShadow: '0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)' 
+            ...glassPanelSx,
           }}
         >
           <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'stretch', sm: 'center' }} justifyContent="space-between" spacing={2} sx={{ mb: 2.5 }}>
@@ -494,8 +493,8 @@ export default function ModuleKuppiPage() {
                     width: { xs: '100%', sm: 'auto' },
                     textTransform: "none",
                     fontWeight: 700,
-                    background: "rgba(255, 255, 255, 0.15)",
-                    backdropFilter: "blur(10px)",
+                    background: { xs: "rgba(255, 255, 255, 0.92)", sm: "rgba(255, 255, 255, 0.15)" },
+                    ...blurFromSm("blur(10px)"),
                     border: "1px solid rgba(255, 255, 255, 0.35)",
                     boxShadow: "0 4px 16px rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
                     color: "#1e3a8a",
@@ -524,7 +523,7 @@ export default function ModuleKuppiPage() {
                     textTransform: "none",
                     fontWeight: 700,
                     background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
-                    backdropFilter: "blur(8px)",
+                    ...blurFromSm("blur(8px)"),
                     border: "1px solid rgba(255, 255, 255, 0.3)",
                     boxShadow: "0 8px 24px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
                     transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
@@ -553,8 +552,8 @@ export default function ModuleKuppiPage() {
                     width: { xs: '100%', sm: 'auto' },
                     textTransform: "none",
                     fontWeight: 700,
-                    background: "rgba(255, 255, 255, 0.15)",
-                    backdropFilter: "blur(10px)",
+                    background: { xs: "rgba(255, 255, 255, 0.92)", sm: "rgba(255, 255, 255, 0.15)" },
+                    ...blurFromSm("blur(10px)"),
                     border: "1px solid rgba(255, 255, 255, 0.35)",
                     boxShadow: "0 4px 16px rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
                     color: "#1e3a8a",
@@ -586,7 +585,7 @@ export default function ModuleKuppiPage() {
                     textTransform: "none",
                     fontWeight: 700,
                     background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
-                    backdropFilter: "blur(8px)",
+                    ...blurFromSm("blur(8px)"),
                     border: "1px solid rgba(255, 255, 255, 0.3)",
                     boxShadow: "0 8px 24px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
                     transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
@@ -634,16 +633,14 @@ export default function ModuleKuppiPage() {
                   sx={{
                     borderRadius: 3,
                     border: "1px solid rgba(255, 255, 255, 0.35)",
-                    background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
-                    backdropFilter: "blur(20px)",
-                    boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                    ...glassCardSx,
                     transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                    "&:hover": {
+                    ...finePointerHover({
                       background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
                       borderColor: "rgba(255, 255, 255, 0.5)",
                       boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
                       transform: "translateY(-2px)",
-                    },
+                    }),
                   }}
                 >
                   <CardActionArea onClick={async () => {
@@ -672,16 +669,14 @@ export default function ModuleKuppiPage() {
                     sx={{
                       borderRadius: 3,
                       border: "1px solid rgba(255, 255, 255, 0.35)",
-                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
-                      backdropFilter: "blur(20px)",
-                      boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                      ...glassCardSx,
                       transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                      "&:hover": {
+                      ...finePointerHover({
                         background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
                         borderColor: "rgba(255, 255, 255, 0.5)",
                         boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
                         transform: "translateY(-2px)",
-                      },
+                      }),
                     }}
                   >
                     <CardActionArea onClick={() => enterResourceCategory(category.id)}>
@@ -720,9 +715,7 @@ export default function ModuleKuppiPage() {
                         p: 2.5,
                         borderRadius: 3,
                         border: "1px solid rgba(255, 255, 255, 0.35)",
-                        background: "linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.1))",
-                        backdropFilter: "blur(15px)",
-                        boxShadow: "0 4px 16px rgba(31, 38, 135, 0.03), inset 0 1px 1px rgba(255, 255, 255, 0.2)",
+                        ...glassYearPanelSx,
                       }}
                     >
                       <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 2 }}>
@@ -774,16 +767,14 @@ export default function ModuleKuppiPage() {
                     sx={{
                       borderRadius: 3,
                       border: "1px solid rgba(255, 255, 255, 0.35)",
-                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
-                      backdropFilter: "blur(20px)",
-                      boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                      ...glassCardSx,
                       transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                      "&:hover": {
+                      ...finePointerHover({
                         background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
                         borderColor: "rgba(255, 255, 255, 0.5)",
                         boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
                         transform: "translateY(-2px)",
-                      },
+                      }),
                     }}
                   >
                     <CardActionArea onClick={() => openFolder(folder)}>
@@ -804,16 +795,14 @@ export default function ModuleKuppiPage() {
                     sx={{
                       borderRadius: 3,
                       border: "1px solid rgba(255, 255, 255, 0.35)",
-                      background: "linear-gradient(135deg, rgba(255, 255, 255, 0.3), rgba(255, 255, 255, 0.1))",
-                      backdropFilter: "blur(20px)",
-                      boxShadow: "0 4px 12px 0 rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
+                      ...glassCardSx,
                       transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
-                      "&:hover": {
+                      ...finePointerHover({
                         background: "linear-gradient(135deg, rgba(255, 255, 255, 0.4), rgba(255, 255, 255, 0.15))",
                         borderColor: "rgba(255, 255, 255, 0.5)",
                         boxShadow: "0 8px 24px 0 rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
                         transform: "translateY(-2px)",
-                      },
+                      }),
                     }}
                   >
                     <CardActionArea component="a" href={resource.file_url} target="_blank" rel="noreferrer">

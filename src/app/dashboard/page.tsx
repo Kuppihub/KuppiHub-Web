@@ -16,6 +16,7 @@ import SchoolIcon from "@mui/icons-material/School";
 import ModuleCard, { ModuleData } from "../components/ModuleCard";
 import { useAuth } from "@/contexts/AuthContext";
 import { checkAndManageCacheExpiration } from "@/lib/cache-utils";
+import { blurFromSm, glassPanelSx } from "@/lib/mobile-safe-glass";
 
 interface DashboardCachePayload {
   modules: ModuleData[];
@@ -270,32 +271,31 @@ export default function DashboardPage() {
     }
   };
 
-  const handleModuleClick = (moduleId: number) => {
+  const handleModuleClick = useCallback((moduleId: number) => {
     if (editMode) return; // Don't navigate in edit mode
     router.push(`/module-kuppi/${moduleId}`);
-  };
+  }, [editMode, router]);
 
-  const removeModule = async (moduleId: number) => {
-    if (!modules) return;
+  const removeModule = useCallback(async (moduleId: number) => {
+    setModules((current) => {
+      if (!current) return current;
+      const updated = current.filter((m) => m.module_id !== moduleId);
+      saveModulesToLocal(updated);
+      sessionStorage.setItem(
+        dashboardCacheKey,
+        JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
+      );
+      if (user?.uid) {
+        void syncToCloud(updated);
+      }
+      return updated;
+    });
+  }, [dashboardCacheKey, saveModulesToLocal, syncToCloud, user?.uid]);
 
-    const updated = modules.filter((m) => m.module_id !== moduleId);
-    setModules(updated);
-    saveModulesToLocal(updated);
-    sessionStorage.setItem(
-      dashboardCacheKey,
-      JSON.stringify({ modules: updated } satisfies DashboardCachePayload)
-    );
-    
-    // Sync to cloud if logged in
-    if (user?.uid) {
-      await syncToCloud(updated);
-    }
-  };
-
-  const handleRemoveModule = async (e: React.MouseEvent, moduleId: number) => {
+  const handleRemoveModule = useCallback(async (e: React.MouseEvent, moduleId: number) => {
     e.stopPropagation();
     await removeModule(moduleId);
-  };
+  }, [removeModule]);
 
   const toggleEditMode = () => {
     setEditMode(!editMode);
@@ -311,9 +311,7 @@ export default function DashboardPage() {
             p: { xs: 2, sm: 3 },
             borderRadius: 4,
             border: "1px solid rgba(255, 255, 255, 0.4)",
-            background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15))",
-            backdropFilter: "blur(20px) saturate(160%)",
-            boxShadow: "0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+            ...glassPanelSx,
           }}
         >
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -335,14 +333,16 @@ export default function DashboardPage() {
                   textTransform: "none",
                   fontWeight: 700,
                   background: "linear-gradient(135deg, rgba(59, 130, 246, 0.8), rgba(99, 102, 241, 0.8))",
-                  backdropFilter: "blur(8px)",
+                  ...blurFromSm("blur(8px)"),
                   border: "1px solid rgba(255, 255, 255, 0.3)",
                   boxShadow: "0 8px 24px rgba(59, 130, 246, 0.25), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
                   transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                  "&:hover": {
-                    background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
-                    boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
-                    transform: "scale(1.04) translateY(-1px)",
+                  "@media (hover: hover) and (pointer: fine)": {
+                    "&:hover": {
+                      background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
+                      boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                      transform: "scale(1.04) translateY(-1px)",
+                    },
                   },
                   "&:active": {
                     transform: "scale(0.96)",
@@ -368,23 +368,25 @@ export default function DashboardPage() {
                       border: "1px solid rgba(255, 255, 255, 0.3)",
                       boxShadow: "0 8px 24px rgba(34, 197, 94, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
                     } : {
-                      background: "rgba(255, 255, 255, 0.15)",
-                      backdropFilter: "blur(10px)",
+                      background: { xs: "rgba(255, 255, 255, 0.92)", sm: "rgba(255, 255, 255, 0.15)" },
+                      ...blurFromSm("blur(10px)"),
                       border: "1px solid rgba(255, 255, 255, 0.35)",
                       boxShadow: "0 4px 16px rgba(31, 38, 135, 0.04), inset 0 1px 1px rgba(255, 255, 255, 0.25)",
                       color: "#1e3a8a",
                     }),
                     transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                    "&:hover": {
-                      ...(editMode ? {
-                        background: "linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(21, 128, 61, 0.95))",
-                        boxShadow: "0 12px 32px rgba(34, 197, 94, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
-                      } : {
-                        background: "rgba(255, 255, 255, 0.3)",
-                        border: "1px solid rgba(255, 255, 255, 0.55)",
-                        boxShadow: "0 8px 24px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.35)",
-                      }),
-                      transform: "scale(1.04) translateY(-1px)",
+                    "@media (hover: hover) and (pointer: fine)": {
+                      "&:hover": {
+                        ...(editMode ? {
+                          background: "linear-gradient(135deg, rgba(34, 197, 94, 0.95), rgba(21, 128, 61, 0.95))",
+                          boxShadow: "0 12px 32px rgba(34, 197, 94, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                        } : {
+                          background: "rgba(255, 255, 255, 0.3)",
+                          border: "1px solid rgba(255, 255, 255, 0.55)",
+                          boxShadow: "0 8px 24px rgba(31, 38, 135, 0.08), inset 0 1px 1px rgba(255, 255, 255, 0.35)",
+                        }),
+                        transform: "scale(1.04) translateY(-1px)",
+                      },
                     },
                     "&:active": {
                       transform: "scale(0.96)",
@@ -409,8 +411,11 @@ export default function DashboardPage() {
                   height: 140,
                   borderRadius: 4,
                   border: "1px solid rgba(255, 255, 255, 0.2)",
-                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08))",
-                  backdropFilter: "blur(10px)",
+                  background: {
+                    xs: "rgba(255, 255, 255, 0.92)",
+                    sm: "linear-gradient(135deg, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0.08))",
+                  },
+                  ...blurFromSm("blur(10px)"),
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -429,9 +434,11 @@ export default function DashboardPage() {
               minHeight: 280,
               borderRadius: 4,
               border: "1px solid rgba(255, 255, 255, 0.4)",
-              background: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.15))",
-              backdropFilter: "blur(20px) saturate(160%)",
-              boxShadow: "0 10px 30px rgba(31, 38, 135, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+              ...glassPanelSx,
+              boxShadow: {
+                xs: "0 2px 10px rgba(15, 23, 42, 0.08)",
+                sm: "0 10px 30px rgba(31, 38, 135, 0.06), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
+              },
             }}
           >
             <SchoolIcon sx={{ fontSize: 56, color: "primary.main", mb: 1.5 }} />
@@ -453,14 +460,16 @@ export default function DashboardPage() {
                 textTransform: "none",
                 fontWeight: 700,
                 background: "linear-gradient(135deg, rgba(59, 130, 246, 0.85), rgba(99, 102, 241, 0.85))",
-                backdropFilter: "blur(8px)",
+                ...blurFromSm("blur(8px)"),
                 border: "1px solid rgba(255, 255, 255, 0.3)",
                 boxShadow: "0 8px 24px rgba(59, 130, 246, 0.2), inset 0 2px 4px rgba(255, 255, 255, 0.35)",
                 transition: "all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)",
-                "&:hover": {
-                  background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
-                  boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
-                  transform: "scale(1.04) translateY(-1px)",
+                "@media (hover: hover) and (pointer: fine)": {
+                  "&:hover": {
+                    background: "linear-gradient(135deg, rgba(59, 130, 246, 0.95), rgba(99, 102, 241, 0.95))",
+                    boxShadow: "0 12px 32px rgba(59, 130, 246, 0.35), inset 0 2px 6px rgba(255, 255, 255, 0.45)",
+                    transform: "scale(1.04) translateY(-1px)",
+                  },
                 },
                 "&:active": {
                   transform: "scale(0.96)",

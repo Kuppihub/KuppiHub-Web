@@ -1,9 +1,8 @@
 // components/VideoCard.tsx
 'use client';
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { memo } from 'react';
 import { useRouter } from 'next/navigation';
-import { Box } from '@mui/material';
 import KuppiCommentsInline from './KuppiCommentsInline';
 import KuppiReviewsInline from './KuppiReviewsInline';
 import { Video } from '../types/video';
@@ -30,10 +29,11 @@ function OneDriveIcon({ className = 'w-5 h-5' }: { className?: string }) {
   );
 }
 
-const RAISED = 'shadow-[8px_8px_16px_#c3c8cf,-8px_-8px_16px_#ffffff]';
-const RAISED_SM = 'shadow-[4px_4px_8px_#c3c8cf,-4px_-4px_8px_#ffffff]';
-const RECESSED = 'shadow-[inset_6px_6px_12px_#cdd4df,inset_-6px_-6px_12px_#ffffff]';
-const RECESSED_SM = 'shadow-[inset_4px_4px_8px_#c3c8cf,inset_-4px_-4px_8px_#ffffff]';
+// Desktop-only neumorphic shadows (hidden cost on mobile via max-sm:shadow-none + simple mobile shadow)
+const DESKTOP_RAISED = 'max-sm:shadow-sm sm:shadow-[8px_8px_16px_#c3c8cf,-8px_-8px_16px_#ffffff]';
+const DESKTOP_RAISED_SM = 'max-sm:shadow-sm sm:shadow-[4px_4px_8px_#c3c8cf,-4px_-4px_8px_#ffffff]';
+const DESKTOP_RECESSED = 'max-sm:shadow-none sm:shadow-[inset_6px_6px_12px_#cdd4df,inset_-6px_-6px_12px_#ffffff]';
+const DESKTOP_RECESSED_SM = 'max-sm:shadow-none sm:shadow-[inset_4px_4px_8px_#c3c8cf,inset_-4px_-4px_8px_#ffffff]';
 
 interface VideoCardProps {
   video: Video;
@@ -42,37 +42,69 @@ interface VideoCardProps {
   onToggle: (id: number) => void;
 }
 
-export default function VideoCard({ video, moduleId, isActive, onToggle }: VideoCardProps) {
+export default memo(function VideoCard({ video, moduleId, isActive, onToggle }: VideoCardProps) {
   return (
     <div
-      className={`h-fit rounded-[40px] p-[8px] bg-[#E5E9F0] border border-white/60 transition-all duration-300 ${
+      className={[
+        'cv-card h-fit transition-shadow duration-300',
+        // Mobile: simple flat card (previous style, low GPU)
+        'rounded-3xl border border-slate-200/80 bg-white shadow-md',
+        // Desktop: neumorphic frame
+        'sm:rounded-[40px] sm:p-[8px] sm:bg-[#E5E9F0] sm:border-white/60',
         isActive
-          ? 'shadow-[16px_16px_32px_#c3c8cf,-16px_-16px_32px_#ffffff]'
-          : 'shadow-[10px_10px_24px_#c3c8cf,-10px_-10px_24px_#ffffff] hover:shadow-[14px_14px_30px_#c3c8cf,-14px_-14px_30px_#ffffff]'
-      }`}
+          ? 'sm:shadow-[16px_16px_32px_#c3c8cf,-16px_-16px_32px_#ffffff]'
+          : 'sm:shadow-[10px_10px_24px_#c3c8cf,-10px_-10px_24px_#ffffff] sm:hover:shadow-[14px_14px_30px_#c3c8cf,-14px_-14px_30px_#ffffff]',
+      ].join(' ')}
     >
-      <div className="bg-[#F4F7FB] rounded-[32px] p-4 sm:p-5 border border-white shadow-[inset_4px_4px_8px_#ffffff,inset_-4px_-4px_8px_#dbe1ea]">
+      <div
+        className={[
+          'p-4',
+          // Mobile: flat white
+          'rounded-3xl bg-white',
+          // Desktop: soft inset panel
+          'sm:rounded-[32px] sm:p-5 sm:bg-[#F4F7FB] sm:border sm:border-white sm:shadow-[inset_4px_4px_8px_#ffffff,inset_-4px_-4px_8px_#dbe1ea]',
+        ].join(' ')}
+      >
         <button
           onClick={() => onToggle(video.id)}
           className="w-full flex items-start justify-between gap-3 text-left focus:outline-none cursor-pointer"
           aria-expanded={isActive}
         >
           <div className="flex items-start gap-3 min-w-0 flex-1">
-            <div className="w-11 h-11 rounded-full bg-[#E5E9F0] shadow-[6px_6px_12px_#c3c8cf,-6px_-6px_12px_#ffffff] flex items-center justify-center p-[4px] shrink-0 border border-white mt-0.5">
-              <div className="w-full h-full rounded-full bg-[#3B5BDB] flex items-center justify-center shadow-[inset_3px_3px_6px_rgba(0,0,0,0.15),inset_-3px_-3px_6px_rgba(255,255,255,0.2)]">
+            <div
+              className={[
+                'w-11 h-11 rounded-full flex items-center justify-center p-[4px] shrink-0 mt-0.5 border',
+                // Mobile: simple blue badge
+                'bg-blue-50 border-blue-100',
+                // Desktop: neumorphic ring
+                'sm:bg-[#E5E9F0] sm:border-white sm:shadow-[6px_6px_12px_#c3c8cf,-6px_-6px_12px_#ffffff]',
+              ].join(' ')}
+            >
+              <div
+                className={[
+                  'w-full h-full rounded-full bg-[#3B5BDB] flex items-center justify-center',
+                  'sm:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.15),inset_-3px_-3px_6px_rgba(255,255,255,0.2)]',
+                ].join(' ')}
+              >
                 <svg className="w-3.5 h-3.5 text-white fill-white ml-0.5" viewBox="0 0 24 24">
                   <path d="M8 5v14l11-7z" />
                 </svg>
               </div>
             </div>
-            <h2 className="font-semibold text-[#2C3E50] text-[15px] sm:text-base leading-snug break-words">
+            <h2 className="font-semibold text-slate-800 sm:text-[#2C3E50] text-[15px] sm:text-base leading-snug break-words">
               {video.title}
             </h2>
           </div>
 
-          <div className="shrink-0 w-9 h-9 rounded-full flex items-center justify-center bg-[#E5E9F0] shadow-[inset_4px_4px_8px_#c3c8cf,inset_-4px_-4px_8px_#ffffff] border border-white/50 mt-0.5">
+          <div
+            className={[
+              'shrink-0 w-9 h-9 rounded-full flex items-center justify-center mt-0.5 border',
+              'bg-slate-50 border-slate-200',
+              'sm:bg-[#E5E9F0] sm:border-white/50 sm:shadow-[inset_4px_4px_8px_#c3c8cf,inset_-4px_-4px_8px_#ffffff]',
+            ].join(' ')}
+          >
             <svg
-              className={`w-4 h-4 text-[#475569] transition-transform duration-300 ${isActive ? 'rotate-180' : ''}`}
+              className={`w-4 h-4 text-slate-500 sm:text-[#475569] transition-transform duration-300 ${isActive ? 'rotate-180' : ''}`}
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -82,37 +114,42 @@ export default function VideoCard({ video, moduleId, isActive, onToggle }: Video
           </div>
         </button>
 
-        <AnimatePresence>
-          {isActive ? <VideoCardContent video={video} moduleId={moduleId} /> : null}
-        </AnimatePresence>
+        {/* Instant expand on mobile — no Framer height animation (GPU-heavy) */}
+        {isActive ? <VideoCardContent video={video} moduleId={moduleId} /> : null}
       </div>
     </div>
   );
-}
+});
 
 function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string }) {
   const router = useRouter();
 
   return (
-    <Box
-      component={motion.div}
-      initial={{ opacity: 0, height: 0 }}
-      animate={{ opacity: 1, height: 'auto' }}
-      exit={{ opacity: 0, height: 0 }}
-      transition={{ duration: 0.3 }}
-      sx={{ overflow: 'hidden' }}
-    >
-      <div className="mt-4 flex flex-col gap-3">
-        <div className={`bg-[#EAEFF6] rounded-[24px] p-4 flex flex-col gap-3 border border-white/70 ${RECESSED}`}>
+    <div className="mt-4 flex flex-col gap-3">
+        <div
+          className={[
+            'rounded-2xl p-4 flex flex-col gap-3 border',
+            // Mobile: flat panel
+            'bg-slate-50 border-slate-200',
+            // Desktop: recessed neumorphic
+            'sm:rounded-[24px] sm:bg-[#EAEFF6] sm:border-white/70',
+            DESKTOP_RECESSED,
+          ].join(' ')}
+        >
           {video.description ? (
-            <p className="text-sm text-[#475569] leading-normal font-normal whitespace-pre-line break-words">
+            <p className="text-sm text-slate-600 sm:text-[#475569] leading-normal font-normal whitespace-pre-line break-words">
               {video.description}
             </p>
           ) : null}
 
           {video.owner?.name ? (
-            <div className="bg-[#2C3E50] rounded-2xl p-1.5 flex items-center max-w-full border border-[#3B4D61] shadow-[4px_4px_8px_rgba(200,210,225,0.8),-4px_-4px_8px_rgba(255,255,255,1)]">
-              <div className="w-8 h-8 rounded-full bg-[#1A252F] shadow-[inset_3px_3px_6px_rgba(0,0,0,0.5)] flex items-center justify-center shrink-0">
+            <div
+              className={[
+                'rounded-2xl p-1.5 flex items-center max-w-full border bg-[#2C3E50] border-[#3B4D61]',
+                'max-sm:shadow-sm sm:shadow-[4px_4px_8px_rgba(200,210,225,0.8),-4px_-4px_8px_rgba(255,255,255,1)]',
+              ].join(' ')}
+            >
+              <div className="w-8 h-8 rounded-full bg-[#1A252F] flex items-center justify-center shrink-0 max-sm:shadow-none sm:shadow-[inset_3px_3px_6px_rgba(0,0,0,0.5)]">
                 <svg className="w-4 h-4 text-[#94A3B8]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                 </svg>
@@ -129,11 +166,18 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
           ) : null}
 
           {video.language_code ? (
-            <div className={`self-start bg-[#E5E9F0] rounded-full px-3.5 py-1.5 flex items-center gap-1.5 border border-white ${RAISED_SM}`}>
-              <svg className="w-3.5 h-3.5 text-[#64748B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <div
+              className={[
+                'self-start rounded-full px-3.5 py-1.5 flex items-center gap-1.5 border',
+                'bg-white border-slate-200',
+                'sm:bg-[#E5E9F0] sm:border-white',
+                DESKTOP_RAISED_SM,
+              ].join(' ')}
+            >
+              <svg className="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.6 9h16.8M3.6 15h16.8M12 3a15 15 0 010 18M12 3a15 15 0 000 18M3 12a9 9 0 1018 0 9 9 0 00-18 0z" />
               </svg>
-              <span className="text-xs font-medium text-[#475569]">
+              <span className="text-xs font-medium text-slate-600 sm:text-[#475569]">
                 Language: {video.language_code.toUpperCase()}
               </span>
             </div>
@@ -154,10 +198,15 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                 <button
                   key={`url-${index}`}
                   onClick={() => router.push(`/module-kuppi/${moduleId}/watch?data=${encodedData}`)}
-                  className="w-full transition-transform hover:scale-[1.01] active:scale-[0.98] outline-none cursor-pointer"
+                  className="w-full active:scale-[0.98] outline-none cursor-pointer sm:transition-transform sm:hover:scale-[1.01]"
                 >
-                  <div className="w-full bg-[#FA5252] rounded-2xl py-3 px-3.5 flex items-center gap-3 border border-[#FF8787] shadow-[6px_6px_12px_#c3c8cf,-6px_-6px_12px_#ffffff,inset_4px_4px_8px_rgba(255,255,255,0.3),inset_-4px_-4px_8px_rgba(0,0,0,0.1)]">
-                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1)]">
+                  <div
+                    className={[
+                      'w-full bg-[#FA5252] rounded-2xl py-3 px-3.5 flex items-center gap-3 border border-[#FF8787]',
+                      'max-sm:shadow-sm sm:shadow-[6px_6px_12px_#c3c8cf,-6px_-6px_12px_#ffffff,inset_4px_4px_8px_rgba(255,255,255,0.3),inset_-4px_-4px_8px_rgba(0,0,0,0.1)]',
+                    ].join(' ')}
+                  >
+                    <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 max-sm:shadow-none sm:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.1)]">
                       <svg className="w-4 h-4 text-[#FA5252]" fill="currentColor" viewBox="0 0 24 24">
                         <path d="M23.498 6.186a2.974 2.974 0 0 0-2.094-2.103C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.404.583a2.974 2.974 0 0 0-2.094 2.103C0 8.09 0 12 0 12s0 3.91.502 5.814a2.974 2.974 0 0 0 2.094 2.103C4.495 20.5 12 20.5 12 20.5s7.505 0 9.404-.583a2.974 2.974 0 0 0 2.094-2.103C24 15.91 24 12 24 12s0-3.91-.502-5.814zM9.75 15.568V8.432L15.818 12 9.75 15.568z" />
                       </svg>
@@ -176,9 +225,14 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full transition-transform hover:scale-[1.01] active:scale-[0.98] outline-none"
+                className="w-full active:scale-[0.98] outline-none sm:transition-transform sm:hover:scale-[1.01]"
               >
-                <div className="w-full bg-[#143db6] rounded-2xl py-3 px-3.5 flex items-center gap-3 border border-[#74C0FC] shadow-[6px_6px_12px_#c3c8cf,-6px_-6px_12px_#ffffff,inset_4px_4px_8px_rgba(255,255,255,0.3),inset_-4px_-4px_8px_rgba(0,0,0,0.1)]">
+                <div
+                  className={[
+                    'w-full bg-[#339AF0] rounded-2xl py-3 px-3.5 flex items-center gap-3 border border-[#74C0FC]',
+                    'max-sm:shadow-sm sm:shadow-[6px_6px_12px_#c3c8cf,-6px_-6px_12px_#ffffff,inset_4px_4px_8px_rgba(255,255,255,0.3),inset_-4px_-4px_8px_rgba(0,0,0,0.1)]',
+                  ].join(' ')}
+                >
                   <div className="w-8 h-8 border-[2.5px] border-white rounded-full flex items-center justify-center shrink-0">
                     <svg className="w-3.5 h-3.5 text-white fill-white -ml-[1px]" viewBox="0 0 25 25">
                       <path d="M9.999 15.2 9.85 19c.35 0 .5-.15.7-.35l1.65-1.6 3.45 2.55c.65.35 1.1.15 1.25-.6l2.25-10.6c.2-.9-.35-1.25-.95-1.05L4.4 10.35c-.9.35-.85.85-.15 1.05l3.2 1 7.4-4.65c.35-.2.65-.1.4.15l-5.8 5.3Z" />
@@ -197,13 +251,20 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full transition-transform hover:scale-[1.01] active:scale-[0.98] outline-none"
+                className="w-full active:scale-[0.98] outline-none sm:transition-transform sm:hover:scale-[1.01]"
               >
-                <div className={`w-full bg-[#E5E9F0] rounded-2xl py-3 px-3.5 flex items-center gap-3 border border-white ${RAISED}`}>
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08)]">
+                <div
+                  className={[
+                    'w-full rounded-2xl py-3 px-3.5 flex items-center gap-3 border',
+                    'bg-slate-100 border-slate-200',
+                    'sm:bg-[#E5E9F0] sm:border-white',
+                    DESKTOP_RAISED,
+                  ].join(' ')}
+                >
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 max-sm:shadow-none sm:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08)]">
                     <OneDriveIcon className="w-4 h-4" />
                   </div>
-                  <span className="text-[#2C3E50] font-medium text-sm text-left break-words">
+                  <span className="text-slate-800 sm:text-[#2C3E50] font-medium text-sm text-left break-words">
                     OneDrive{video.onedrive_cloud_video_urls!.length > 1 ? ` ${index + 1}` : ''}
                   </span>
                 </div>
@@ -216,13 +277,20 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full transition-transform hover:scale-[1.01] active:scale-[0.98] outline-none"
+                className="w-full active:scale-[0.98] outline-none sm:transition-transform sm:hover:scale-[1.01]"
               >
-                <div className={`w-full bg-[#E5E9F0] rounded-2xl py-3 px-3.5 flex items-center gap-3 border border-white ${RAISED}`}>
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08)]">
+                <div
+                  className={[
+                    'w-full rounded-2xl py-3 px-3.5 flex items-center gap-3 border',
+                    'bg-slate-100 border-slate-200',
+                    'sm:bg-[#E5E9F0] sm:border-white',
+                    DESKTOP_RAISED,
+                  ].join(' ')}
+                >
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 max-sm:shadow-none sm:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08)]">
                     <GoogleDriveIcon className="w-4 h-4" />
                   </div>
-                  <span className="text-[#2C3E50] font-medium text-sm text-left break-words">
+                  <span className="text-slate-800 sm:text-[#2C3E50] font-medium text-sm text-left break-words">
                     Google Drive{video.gdrive_cloud_video_urls!.length > 1 ? ` ${index + 1}` : ''}
                   </span>
                 </div>
@@ -235,11 +303,18 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                 href={link}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-full transition-transform hover:scale-[1.01] active:scale-[0.98] outline-none"
+                className="w-full active:scale-[0.98] outline-none sm:transition-transform sm:hover:scale-[1.01]"
               >
-                <div className={`w-full bg-[#E5E9F0] rounded-2xl py-3 px-3.5 flex items-center gap-3 border border-white ${RAISED_SM}`}>
-                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08)]">
-                    <svg className="w-4 h-4 text-[#475569]" fill="currentColor" viewBox="0 0 20 20">
+                <div
+                  className={[
+                    'w-full rounded-2xl py-3 px-3.5 flex items-center gap-3 border',
+                    'bg-slate-100 border-slate-200',
+                    'sm:bg-[#E5E9F0] sm:border-white',
+                    DESKTOP_RAISED_SM,
+                  ].join(' ')}
+                >
+                  <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center shrink-0 max-sm:shadow-none sm:shadow-[inset_2px_2px_4px_rgba(0,0,0,0.08)]">
+                    <svg className="w-4 h-4 text-slate-600" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
@@ -247,8 +322,8 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                       />
                     </svg>
                   </div>
-                  <span className="text-[#2C3E50] font-medium text-sm text-left break-words">
-                    Materials - PDF{video.material_urls!.length > 1 ? ` ${index + 1}` : ''}
+                  <span className="text-slate-800 sm:text-[#2C3E50] font-medium text-sm text-left break-words">
+                    Materials{video.material_urls!.length > 1 ? ` ${index + 1}` : ''}
                   </span>
                 </div>
               </a>
@@ -256,13 +331,19 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
           </div>
         </div>
 
-        <hr className="border-t border-[#DCE2E9]" />
+        <hr className="border-t border-slate-200 sm:border-[#DCE2E9]" />
 
-        <div className={`bg-[#EAEFF6] rounded-[24px] px-4 py-2 border border-white/70 ${RECESSED_SM}`}>
+        <div
+          className={[
+            'rounded-2xl px-4 py-2 border',
+            'bg-slate-50 border-slate-200',
+            'sm:rounded-[24px] sm:bg-[#EAEFF6] sm:border-white/70',
+            DESKTOP_RECESSED_SM,
+          ].join(' ')}
+        >
           <KuppiReviewsInline kuppiId={String(video.id)} />
           <KuppiCommentsInline kuppiId={String(video.id)} />
         </div>
-      </div>
-    </Box>
+    </div>
   );
 }
