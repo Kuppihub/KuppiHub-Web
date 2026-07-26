@@ -47,28 +47,21 @@ export default memo(function ModuleCard({
         sx={{
           height: "100%",
           minHeight: 140,
-          borderRadius: 4,
-          border: "1px solid rgba(255, 255, 255, 0.4)",
-          background: {
-            xs: "rgba(255, 255, 255, 0.92)",
-            sm: "linear-gradient(135deg, rgba(255, 255, 255, 0.35), rgba(255, 255, 255, 0.12))",
-          },
-          backdropFilter: { xs: "none", sm: "blur(20px) saturate(160%)" },
-          WebkitBackdropFilter: { xs: "none", sm: "blur(20px) saturate(160%)" },
-          boxShadow: {
-            xs: "0 2px 10px rgba(15, 23, 42, 0.08)",
-            sm: "0 8px 32px 0 rgba(31, 38, 135, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.3)",
-          },
+          borderRadius: 3,
+          border: "1px solid #c7d2fe",
+          background: "#ffffff",
+          backdropFilter: "none",
+          WebkitBackdropFilter: "none",
+          boxShadow: "0 4px 6px -1px rgba(49, 46, 129, 0.08), 0 10px 20px -4px rgba(49, 46, 129, 0.12)",
           overflow: "hidden",
-          transition: "all 0.4s cubic-bezier(0.16, 1, 0.3, 1)",
+          transition: "box-shadow 0.25s ease, transform 0.25s ease, border-color 0.25s ease",
           "@media (hover: hover) and (pointer: fine)": {
             "&:hover": editMode
               ? {}
               : {
-                  background: "linear-gradient(135deg, rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0.18))",
-                  borderColor: "rgba(255, 255, 255, 0.55)",
-                  boxShadow: "0 12px 40px 0 rgba(31, 38, 135, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.4)",
-                  transform: "translateY(-4px) scale(1.01)",
+                  borderColor: "#a5b4fc",
+                  boxShadow: "0 8px 12px -2px rgba(49, 46, 129, 0.1), 0 16px 28px -6px rgba(49, 46, 129, 0.16)",
+                  transform: "translateY(-3px)",
                 },
           },
         }}
@@ -93,13 +86,13 @@ export default memo(function ModuleCard({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  bgcolor: editMode ? "rgba(239, 68, 68, 0.15)" : "rgba(59, 130, 246, 0.15)",
-                  color: editMode ? "#dc2626" : "#1d4ed8",
+                  bgcolor: editMode ? "#fee2e2" : "#eef2ff",
+                  color: editMode ? "#dc2626" : "#4338ca",
                   border: "1px solid",
-                  borderColor: editMode ? "rgba(239, 68, 68, 0.25)" : "rgba(59, 130, 246, 0.25)",
-                  boxShadow: { xs: "none", sm: "inset 0 1px 1px rgba(255, 255, 255, 0.4)" },
-                  backdropFilter: { xs: "none", sm: "blur(4px)" },
-                  WebkitBackdropFilter: { xs: "none", sm: "blur(4px)" },
+                  borderColor: editMode ? "#fecaca" : "#c7d2fe",
+                  boxShadow: "none",
+                  backdropFilter: "none",
+                  WebkitBackdropFilter: "none",
                   flexShrink: 0,
                 }}
               >
@@ -164,15 +157,11 @@ export default memo(function ModuleCard({
               <Typography variant="caption" color="text.secondary">
                 {m.semester?.name || m.department?.name || ""}
               </Typography>
-              {!editMode ? (
-                <Typography variant="caption" color="primary.main" fontWeight={700}>
-                  View
-                </Typography>
-              ) : (
+              {editMode ? (
                 <Typography variant="caption" color="error.main" fontWeight={700}>
                   Tap to remove
                 </Typography>
-              )}
+              ) : null}
             </Stack>
           </CardContent>
         </CardActionArea>
