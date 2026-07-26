@@ -35,7 +35,13 @@ export async function GET(req: NextRequest) {
 
     const categoryId = categoryIdParam ? Number(categoryIdParam) : categories?.[0]?.id;
     if (!categoryId) {
-      return NextResponse.json({ categories: [], folders: [], resources: [], activeCategoryId: null });
+      return NextResponse.json({
+        categories: [],
+        folders: [],
+        resources: [],
+        categoryCounts: {},
+        activeCategoryId: null,
+      });
     }
 
     const { data: moduleData } = await supabaseAdmin
@@ -86,10 +92,34 @@ export async function GET(req: NextRequest) {
       canAccessResource(userEmail, r.is_public, r.allowed_domains)
     );
 
+    const categoryCounts: Record<number, number> = {};
+    for (const category of categories || []) {
+      categoryCounts[category.id] = 0;
+    }
+
+    const { data: countRows, error: countError } = await supabaseAdmin
+      .from("resources")
+      .select("category_id,is_public,allowed_domains")
+      .eq("module_id", moduleId)
+      .eq("is_approved", true)
+      .eq("is_active", true);
+
+    if (countError) {
+      return NextResponse.json({ error: countError.message }, { status: 500 });
+    }
+
+    for (const row of countRows || []) {
+      if (!canAccessResource(userEmail, row.is_public, row.allowed_domains)) continue;
+      const id = Number(row.category_id);
+      if (!(id in categoryCounts)) continue;
+      categoryCounts[id] += 1;
+    }
+
     return NextResponse.json({
       categories: categories || [],
       folders: folders || [],
       resources,
+      categoryCounts,
       activeCategoryId: categoryId,
       activeParentFolderId: parentFolderId,
       moduleCode: moduleData?.code ?? "",

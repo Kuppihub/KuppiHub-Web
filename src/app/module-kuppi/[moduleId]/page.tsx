@@ -71,6 +71,7 @@ type PersistedModuleCache = {
   resourcesMap: Array<[string, ResourceCacheEntry]>;
   didLoadCategories: boolean;
   categories: ResourceCategory[];
+  categoryCounts?: Record<number, number>;
   moduleTitle?: string;
 };
 
@@ -81,6 +82,7 @@ export default function ModuleKuppiPage() {
   const [openVideoIds, setOpenVideoIds] = useState<number[]>([]);
 
   const [categories, setCategories] = useState<ResourceCategory[]>([]);
+  const [categoryCounts, setCategoryCounts] = useState<Record<number, number>>({});
   const [activeCategoryId, setActiveCategoryId] = useState<number | null>(null);
   const [activeParentFolderId, setActiveParentFolderId] = useState<number | null>(null);
   const [folderTrail, setFolderTrail] = useState<{ id: number; name: string }[]>([]);
@@ -127,6 +129,7 @@ export default function ModuleKuppiPage() {
       resourcesCacheRef.current = new Map(parsed.resourcesMap || []);
       if (parsed.videos) setVideos(parsed.videos);
       if (parsed.categories?.length) setCategories(parsed.categories);
+      if (parsed.categoryCounts) setCategoryCounts(parsed.categoryCounts);
       if (parsed.moduleTitle) setModuleTitle(parsed.moduleTitle);
       if (parsed.didLoadCategories) {
         setDidLoadCategories(true);
@@ -144,10 +147,11 @@ export default function ModuleKuppiPage() {
       resourcesMap: Array.from(resourcesCacheRef.current.entries()),
       didLoadCategories,
       categories,
+      categoryCounts,
       moduleTitle,
     };
     window.sessionStorage.setItem(storageKey, JSON.stringify(payload));
-  }, [storageKey, moduleId, didLoadCategories, categories, videos, folders, resources, moduleTitle]);
+  }, [storageKey, moduleId, didLoadCategories, categories, categoryCounts, videos, folders, resources, moduleTitle]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -243,6 +247,9 @@ export default function ModuleKuppiPage() {
       setCategories(nextEntry.categories);
       setFolders(nextEntry.folders);
       setResources(nextEntry.resources);
+      if (data.categoryCounts && typeof data.categoryCounts === 'object') {
+        setCategoryCounts(data.categoryCounts);
+      }
 
       if (data.moduleCode && data.moduleName) {
         setModuleTitle(`${data.moduleCode} - ${data.moduleName}`);
@@ -268,7 +275,7 @@ export default function ModuleKuppiPage() {
 
   useEffect(() => {
     if (!didLoadCategories) return;
-    if (activeDirectory !== 'kuppi') return;
+    if (activeDirectory !== 'kuppi' && activeDirectory !== 'root') return;
     fetchVideos();
   }, [activeDirectory, didLoadCategories, fetchVideos]);
 
@@ -283,6 +290,7 @@ export default function ModuleKuppiPage() {
       setDidLoadCategories(false);
       setVideos([]);
       setCategories([]);
+      setCategoryCounts({});
       setFolders([]);
       setResources([]);
       setResourcesLoading(true);
@@ -650,7 +658,7 @@ export default function ModuleKuppiPage() {
                         <Typography variant="h6">Kuppi</Typography>
                       </Stack>
                       <Typography variant="body2" color="text.secondary">
-                        View all kuppi videos for this module.
+                        {videos.length} {videos.length === 1 ? 'kuppi' : 'kuppis'}
                       </Typography>
                     </CardContent>
                   </CardActionArea>
@@ -683,7 +691,7 @@ export default function ModuleKuppiPage() {
                           <Typography variant="h6">{category.name}</Typography>
                         </Stack>
                         <Typography variant="body2" color="text.secondary">
-                          Open folder and view files.
+                          {categoryCounts[category.id] ?? 0} {category.name.toLowerCase()}
                         </Typography>
                       </CardContent>
                     </CardActionArea>
