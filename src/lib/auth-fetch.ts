@@ -103,3 +103,26 @@ export async function authDelete(url: string): Promise<Response> {
     method: "DELETE",
   });
 }
+
+/**
+ * Fetch that attaches a Bearer token when the user is signed in.
+ * Useful for public endpoints that optionally apply auth-based access control.
+ */
+export async function optionalAuthFetch(
+  url: string,
+  options: RequestInit = {}
+): Promise<Response> {
+  const token = await getIdToken();
+  const headers = new Headers(options.headers);
+  if (token) {
+    headers.set("Authorization", `Bearer ${token}`);
+  }
+  if (options.body && !headers.has("Content-Type")) {
+    headers.set("Content-Type", "application/json");
+  }
+
+  return fetch(url, {
+    ...options,
+    headers,
+  });
+}

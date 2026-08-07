@@ -205,6 +205,15 @@ export async function POST(request: NextRequest) {
     // Determine student ID
     let student_id = null;
     if (bodyStudentId && typeof bodyStudentId === "number") {
+      const { data: studentExists } = await supabaseAdmin
+        .from("students")
+        .select("id")
+        .eq("id", bodyStudentId)
+        .maybeSingle();
+
+      if (!studentExists) {
+        return NextResponse.json({ error: "Invalid student selected" }, { status: 400 });
+      }
       student_id = bodyStudentId;
     } else if (bodyStudentName && typeof bodyStudentName === "string" && bodyStudentName.trim()) {
       student_id = await findOrCreateStudentByName(bodyStudentName);

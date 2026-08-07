@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import supabase from '../../../lib/supabase-admin';
+import { authenticateRequest } from "@/lib/firebase-admin";
 
 interface VideoQueryResult {
   id: number;
@@ -20,24 +21,19 @@ interface VideoQueryResult {
   } | null;
 }
 
-// Helper function to check if user's email domain is allowed
 function canAccessVideo(userEmail: string | null, allowedDomains: string[] | null): boolean {
-  // If no domain restrictions, video is public
   if (!allowedDomains || allowedDomains.length === 0) {
     return true;
   }
-  
-  // If user is not logged in, they can't access restricted content
+
   if (!userEmail) {
     return false;
   }
-  
-  // Extract domain from email (e.g., 'user@uom.lk' -> '@uom.lk')
+
   const parts = userEmail.split('@');
   if (parts.length < 2) return false;
   const userDomain = '@' + parts[1];
-  
-  // Check if user's domain is in the allowed list
+
   return allowedDomains.includes(userDomain);
 }
 
@@ -45,14 +41,15 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const moduleId = searchParams.get("moduleId");
-    const userEmail = searchParams.get("userEmail"); // Pass logged-in user's email
 
     if (!moduleId) {
       return NextResponse.json({ error: "moduleId is required" }, { status: 400 });
     }
 
-    // Fetch videos - only show visible and approved kuppis
-    // Filter: is_hidden = false AND is_approved = true
+    // Domain access must come from a verified token — never from a query param
+    const verifiedUser = await authenticateRequest(req.headers.get("authorization"));
+    const userEmail = verifiedUser?.email ?? null;
+
     const { data, error } = await supabase
       .from('videos')
       .select(`
@@ -76,8 +73,6 @@ export async function GET(req: NextRequest) {
       .eq('module_id', Number(moduleId))
       .eq('is_hidden', false)
       .eq('is_approved', true)
-      // Primary sort: published date (newest first)
-      // Tie-breakers: latest upload timestamp, then id
       .order('published_at', { ascending: false })
       .order('created_at', { ascending: false })
       .order('id', { ascending: false });
@@ -88,14 +83,14 @@ export async function GET(req: NextRequest) {
 
     const queryData = (data || []) as unknown as VideoQueryResult[];
 
-    // Filter videos based on user's email domain access
-    const accessibleVideos = queryData.filter(video => 
+    const accessibleVideos = queryData.filter(video =>
       canAccessVideo(userEmail, video.allowed_domains)
     );
 
     return NextResponse.json(accessibleVideos);
 
-  } catch (err: any) {
-    return NextResponse.json({ error: err?.message || 'Something went wrong' }, { status: 500 });
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Something went wrong';
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

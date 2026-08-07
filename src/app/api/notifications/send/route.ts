@@ -128,7 +128,6 @@ export async function POST(request: NextRequest) {
       result.data = {
         notification_id: notification.id,
         devices_targeted: devices?.length || 0,
-        fcm_tokens: devices?.map((d) => d.fcm_token) || [],
       };
     } else if (target_type === "guest_broadcast") {
       // Send to all guests (devices with user_id = NULL)
@@ -146,7 +145,6 @@ export async function POST(request: NextRequest) {
       result.notifications_sent = guestDevices?.length || 0;
       result.data = {
         guest_devices_targeted: guestDevices?.length || 0,
-        fcm_tokens: guestDevices?.map((d) => d.fcm_token) || [],
       };
     } else if (target_type === "topic") {
       // Send to topic (e.g., "all_users", "maths_module", etc.)

@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Preloader from "../components/Preloader";
+import { optionalAuthFetch } from "@/lib/auth-fetch";
 interface Kuppi {
   id: number;
   moduleId: number;
@@ -17,9 +18,9 @@ export default function ModuleKuppiPage() {
 
   useEffect(() => {
     if (!moduleId) return;
-    fetch(`/api/kuppis?moduleId=${moduleId}`)
+    optionalAuthFetch(`/api/kuppis?moduleId=${moduleId}`)
       .then((res) => res.json())
-      .then((data) => setKuppis(data))
+      .then((data) => setKuppis(Array.isArray(data) ? data : []))
       .finally(() => setLoading(false));
   }, [moduleId]);
 

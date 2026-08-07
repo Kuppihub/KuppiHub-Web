@@ -23,7 +23,12 @@ function verifySignature(reqBody: string, signature: string | null): boolean {
   }
   const hmac = crypto.createHmac("sha256", GITHUB_WEBHOOK_SECRET);
   const digest = "sha256=" + hmac.update(reqBody).digest("hex");
-  return crypto.timingSafeEqual(Buffer.from(digest), Buffer.from(signature));
+  const digestBuf = Buffer.from(digest);
+  const signatureBuf = Buffer.from(signature);
+  if (digestBuf.length !== signatureBuf.length) {
+    return false;
+  }
+  return crypto.timingSafeEqual(digestBuf, signatureBuf);
 }
 
 function formatTitle(fileName: string): string {

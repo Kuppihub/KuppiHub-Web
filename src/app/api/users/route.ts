@@ -1,33 +1,35 @@
 import { NextRequest, NextResponse } from 'next/server';
 import supabaseAdmin from '@/lib/supabase-admin';
+import { authenticateRequest } from '@/lib/firebase-admin';
 
-// Check if Supabase is configured
 const isSupabaseConfigured = () => {
   return !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY);
 };
 
-// GET - Fetch user by firebase_uid or email
+const PROFILE_SELECT =
+  'id,firebase_uid,email,display_name,photo_url,is_verified,auth_provider,is_approved_for_kuppies,created_at,updated_at';
+
+const ALLOWED_PATCH_FIELDS = new Set(['display_name', 'photo_url']);
+
+async function requireVerifiedUser(request: NextRequest) {
+  return authenticateRequest(request.headers.get('authorization'));
+}
+
+// GET - Fetch the authenticated user's profile only
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const firebaseUid = searchParams.get('firebase_uid');
-    const email = searchParams.get('email');
-
-    if (!firebaseUid && !email) {
-      return NextResponse.json({ error: 'firebase_uid or email is required' }, { status: 400 });
+    const verifiedUser = await requireVerifiedUser(request);
+    if (!verifiedUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    let query = supabaseAdmin.from('users').select('*');
-    
-    if (firebaseUid) {
-      query = query.eq('firebase_uid', firebaseUid);
-    } else if (email) {
-      query = query.eq('email', email);
-    }
+    const { data, error } = await supabaseAdmin
+      .from('users')
+      .select(PROFILE_SELECT)
+      .eq('firebase_uid', verifiedUser.uid)
+      .single();
 
-    const { data, error } = await query.single();
-
-    if (error && error.code !== 'PGRST116') { // PGRST116 = no rows found
+    if (error && error.code !== 'PGRST116') {
       throw error;
     }
 
@@ -38,154 +40,157 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST - Create or update user
+// POST - Create or update the authenticated user's own profile
 export async function POST(request: NextRequest) {
   try {
-    // Check Supabase configuration first
     if (!isSupabaseConfigured()) {
       console.error('Supabase is not configured. Missing environment variables.');
-      return NextResponse.json({ 
-        error: 'Database not configured', 
-        message: 'Missing SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY'
-      }, { status: 500 });
+      return NextResponse.json(
+        { error: 'Database not configured' },
+        { status: 500 }
+      );
+    }
+
+    const verifiedUser = await requireVerifiedUser(request);
+    if (!verifiedUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    if (!verifiedUser.email) {
+      return NextResponse.json({ error: 'Authenticated email is required' }, { status: 400 });
     }
 
     const body = await request.json();
-    const { firebase_uid, email, display_name, photo_url, is_verified, auth_provider } = body;
+    const { display_name, photo_url, auth_provider } = body;
 
-    console.log('POST /api/users - Received:', { firebase_uid, email, display_name, auth_provider });
+    // Never trust client identity claims — bind to verified token only
+    const firebase_uid = verifiedUser.uid;
+    const email = verifiedUser.email;
+    const is_verified = verifiedUser.emailVerified;
+    const safeDisplayName =
+      typeof display_name === 'string'
+        ? display_name
+        : verifiedUser.displayName || null;
+    const safePhotoUrl =
+      typeof photo_url === 'string' ? photo_url : verifiedUser.photoURL || null;
+    const safeAuthProvider =
+      typeof auth_provider === 'string' && ['google', 'github', 'email'].includes(auth_provider)
+        ? auth_provider
+        : 'email';
 
-    if (!firebase_uid || !email) {
-      return NextResponse.json({ error: 'firebase_uid and email are required' }, { status: 400 });
-    }
-
-    // First, check if user already exists by firebase_uid
     const { data: existingUser, error: fetchError } = await supabaseAdmin
       .from('users')
-      .select('*')
+      .select(PROFILE_SELECT)
       .eq('firebase_uid', firebase_uid)
       .single();
 
-    // Log fetch result (PGRST116 = no rows found, which is OK)
     if (fetchError && fetchError.code !== 'PGRST116') {
       console.error('Error fetching existing user:', fetchError);
       throw fetchError;
     }
 
     if (existingUser) {
-      // User exists, update it
       const { data, error } = await supabaseAdmin
         .from('users')
         .update({
-          display_name: display_name || existingUser.display_name,
-          photo_url: photo_url || existingUser.photo_url,
-          is_verified: is_verified ?? existingUser.is_verified,
-          auth_provider: auth_provider || existingUser.auth_provider,
-          updated_at: new Date().toISOString()
+          email,
+          display_name: safeDisplayName || existingUser.display_name,
+          photo_url: safePhotoUrl || existingUser.photo_url,
+          is_verified,
+          auth_provider: safeAuthProvider || existingUser.auth_provider,
+          updated_at: new Date().toISOString(),
         })
         .eq('firebase_uid', firebase_uid)
-        .select()
+        .select(PROFILE_SELECT)
         .single();
 
       if (error) throw error;
 
-      return NextResponse.json({ 
+      return NextResponse.json({
         success: true,
-        user: data 
+        user: data,
       });
     }
 
-    // Check if email already exists (for a different firebase user - shouldn't happen normally)
+    // Block account takeover: never rebind an existing email to a different Firebase UID
     const { data: emailExists } = await supabaseAdmin
       .from('users')
-      .select('id')
+      .select('id,firebase_uid')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
-    if (emailExists) {
-      // Email already used by different account, update the firebase_uid
-      const { data, error } = await supabaseAdmin
-        .from('users')
-        .update({
-          firebase_uid,
-          display_name: display_name || null,
-          photo_url: photo_url || null,
-          is_verified: is_verified || false,
-          auth_provider: auth_provider || 'email',
-          updated_at: new Date().toISOString()
-        })
-        .eq('email', email)
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return NextResponse.json({ 
-        success: true,
-        user: data 
-      });
+    if (emailExists && emailExists.firebase_uid !== firebase_uid) {
+      return NextResponse.json(
+        { error: 'An account with this email already exists' },
+        { status: 409 }
+      );
     }
 
-    // User doesn't exist, create new
     const { data, error } = await supabaseAdmin
       .from('users')
       .insert({
         firebase_uid,
         email,
-        display_name: display_name || null,
-        photo_url: photo_url || null,
-        is_verified: is_verified || false,
-        auth_provider: auth_provider || 'email',
+        display_name: safeDisplayName,
+        photo_url: safePhotoUrl,
+        is_verified,
+        auth_provider: safeAuthProvider,
       })
-      .select()
+      .select(PROFILE_SELECT)
       .single();
 
     if (error) throw error;
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      user: data 
+      user: data,
     });
   } catch (error: unknown) {
     console.error('Error saving user:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    const errorDetails = typeof error === 'object' && error !== null ? JSON.stringify(error, Object.getOwnPropertyNames(error)) : String(error);
-    return NextResponse.json({ 
-      error: 'Failed to save user', 
-      message: errorMessage,
-      details: errorDetails,
-      code: (error as { code?: string })?.code || ''
-    }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to save user' }, { status: 500 });
   }
 }
 
-// PATCH - Update user verification status or other fields
+// PATCH - Update safe profile fields for the authenticated user only
 export async function PATCH(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { firebase_uid, ...updateFields } = body;
-
-    if (!firebase_uid) {
-      return NextResponse.json({ error: 'firebase_uid is required' }, { status: 400 });
+    const verifiedUser = await requireVerifiedUser(request);
+    if (!verifiedUser) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
+
+    const body = await request.json();
+    const updateFields: Record<string, unknown> = {};
+
+    for (const [key, value] of Object.entries(body || {})) {
+      if (!ALLOWED_PATCH_FIELDS.has(key)) continue;
+      if (typeof value === 'string' || value === null) {
+        updateFields[key] = value;
+      }
+    }
+
+    if (Object.keys(updateFields).length === 0) {
+      return NextResponse.json({ error: 'No valid fields to update' }, { status: 400 });
+    }
+
+    // Keep verification in sync with Firebase; never accept client is_admin / is_verified
+    updateFields.is_verified = verifiedUser.emailVerified;
+    updateFields.updated_at = new Date().toISOString();
 
     const { data, error } = await supabaseAdmin
       .from('users')
-      .update({ 
-        ...updateFields,
-        updated_at: new Date().toISOString()
-      })
-      .eq('firebase_uid', firebase_uid)
-      .select()
+      .update(updateFields)
+      .eq('firebase_uid', verifiedUser.uid)
+      .select(PROFILE_SELECT)
       .single();
 
     if (error) {
       throw error;
     }
 
-    return NextResponse.json({ 
+    return NextResponse.json({
       success: true,
-      user: data 
+      user: data,
     });
   } catch (error) {
     console.error('Error updating user:', error);

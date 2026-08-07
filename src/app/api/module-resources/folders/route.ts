@@ -9,6 +9,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const { data: userData } = await supabaseAdmin
+      .from("users")
+      .select("id,is_admin")
+      .eq("firebase_uid", user.uid)
+      .single();
+
+    if (!userData?.is_admin) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+
     const body = await req.json();
     const moduleId = Number(body?.module_id);
     const categoryId = Number(body?.category_id);
@@ -19,13 +29,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "module_id, category_id and name are required" }, { status: 400 });
     }
 
-    const { data: userData } = await supabaseAdmin
-      .from("users")
-      .select("id")
-      .eq("firebase_uid", user.uid)
-      .single();
-
-    const createdBy = userData?.id ?? null;
+    if (name.length > 120) {
+      return NextResponse.json({ error: "Folder name is too long" }, { status: 400 });
+    }
 
     const { data, error } = await supabaseAdmin
       .from("resource_folders")
@@ -34,7 +40,7 @@ export async function POST(req: NextRequest) {
         category_id: categoryId,
         parent_id: parentId,
         name,
-        created_by_user_id: createdBy,
+        created_by_user_id: userData.id,
       })
       .select("id,name,parent_id,module_id,category_id")
       .single();

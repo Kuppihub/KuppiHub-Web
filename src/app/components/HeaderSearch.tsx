@@ -5,6 +5,7 @@ import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
+import { authGet, authPost } from "@/lib/auth-fetch";
 
 interface Module {
   id: number;
@@ -49,9 +50,7 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
 
     try {
       if (user?.uid) {
-        const res = await fetch(
-          `/api/user-dashboard?firebase_uid=${encodeURIComponent(user.uid)}`
-        );
+        const res = await authGet('/api/user-dashboard');
         if (res.ok) {
           const data = await res.json();
           const ids: number[] = Array.isArray(data.moduleIds) ? data.moduleIds : [];
@@ -141,9 +140,7 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
       let existing: DashboardModule[] = [];
 
       if (user?.uid) {
-        const dashRes = await fetch(
-          `/api/user-dashboard?firebase_uid=${encodeURIComponent(user.uid)}`
-        );
+        const dashRes = await authGet('/api/user-dashboard');
         if (dashRes.ok) {
           const data = await dashRes.json();
           const ids: number[] = Array.isArray(data.moduleIds) ? data.moduleIds : [];
@@ -181,13 +178,8 @@ export default function HeaderSearch({ variant }: HeaderSearchProps) {
       // If logged in, sync to database immediately
       if (user?.uid) {
         try {
-          const response = await fetch('/api/user-dashboard', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              firebase_uid: user.uid,
-              moduleIds: existing.map(m => m.module_id),
-            }),
+          const response = await authPost('/api/user-dashboard', {
+            moduleIds: existing.map(m => m.module_id),
           });
           
           if (!response.ok) {

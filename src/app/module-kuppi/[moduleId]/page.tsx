@@ -33,6 +33,7 @@ import Preloader from '../../components/Preloader';
 import { Video } from '../../types/video';
 import { useAuth } from '@/contexts/AuthContext';
 import { getIdToken } from '@/lib/auth-utils';
+import { optionalAuthFetch } from '@/lib/auth-fetch';
 import { checkAndManageCacheExpiration, forceExpireCache } from '@/lib/cache-utils';
 import ResourceUploadDialog from './components/ResourceUploadDialog';
 import { blurFromSm, finePointerHover, glassCardSx, glassPanelSx, glassYearPanelSx } from '@/lib/mobile-safe-glass';
@@ -193,8 +194,7 @@ export default function ModuleKuppiPage() {
 
     setVideosLoading(true);
     try {
-      const emailParam = user?.email ? `&userEmail=${encodeURIComponent(user.email)}` : '';
-      const res = await fetch(`/api/kuppis?moduleId=${moduleId}${emailParam}`);
+      const res = await optionalAuthFetch(`/api/kuppis?moduleId=${moduleId}`);
       if (!res.ok) throw new Error('Failed to fetch videos');
       const data: Video[] = await res.json();
       videosCacheRef.current = data;
@@ -205,7 +205,7 @@ export default function ModuleKuppiPage() {
     } finally {
       setVideosLoading(false);
     }
-  }, [moduleId, user]);
+  }, [moduleId]);
 
   const fetchResources = useCallback(async () => {
     if (!moduleId) return;

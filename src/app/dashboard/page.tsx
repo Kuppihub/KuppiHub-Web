@@ -15,6 +15,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import SchoolIcon from "@mui/icons-material/School";
 import ModuleCard, { ModuleData } from "../components/ModuleCard";
 import { useAuth } from "@/contexts/AuthContext";
+import { authFetch, authGet, authPost } from "@/lib/auth-fetch";
 import { checkAndManageCacheExpiration } from "@/lib/cache-utils";
 import { blurFromSm, glassPanelSx } from "@/lib/mobile-safe-glass";
 
@@ -37,21 +38,21 @@ export default function DashboardPage() {
     if (userCheckedRef.current) return true;
     
     try {
-      const response = await fetch('/api/users', {
+      const providerId = user.providerData[0]?.providerId;
+      const authProvider =
+        providerId === 'google.com' ? 'google' : providerId === 'github.com' ? 'github' : 'email';
+
+      const response = await authFetch('/api/users', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          firebase_uid: user.uid,
-          email: user.email,
           display_name: user.displayName,
           photo_url: user.photoURL,
-          is_verified: user.emailVerified,
-          auth_provider: user.providerData[0]?.providerId === 'google.com' ? 'google' : 'email',
+          auth_provider: authProvider,
         }),
       });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         console.error('Failed to ensure user exists:', errorData);
         return false;
       }
@@ -77,14 +78,10 @@ export default function DashboardPage() {
       }
       
       const moduleIds = moduleData.map(m => m.module_id);
-      const response = await fetch('/api/user-dashboard', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ firebase_uid: user.uid, moduleIds }),
-      });
+      const response = await authPost('/api/user-dashboard', { moduleIds });
       
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json().catch(() => ({}));
         console.error('Failed to sync to cloud:', errorData);
       }
     } catch (err) {
@@ -102,7 +99,7 @@ export default function DashboardPage() {
       // Ensure user exists first
       await ensureUserExists();
       
-      const res = await fetch(`/api/user-dashboard?firebase_uid=${encodeURIComponent(user.uid)}`);
+      const res = await authGet('/api/user-dashboard');
       if (!res.ok) return null;
       const data = await res.json();
       return data.moduleIds || [];

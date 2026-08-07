@@ -44,24 +44,36 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+async function getBearerToken(firebaseUser: User): Promise<string | null> {
+  try {
+    return await firebaseUser.getIdToken(true);
+  } catch (error) {
+    console.error('Error getting ID token:', error);
+    return null;
+  }
+}
+
 // Helper function to sync user with Supabase and return user data
 async function syncUserToSupabase(firebaseUser: User, authProvider: 'google' | 'github' | 'email'): Promise<SupabaseUser | null> {
   try {
+    const token = await getBearerToken(firebaseUser);
+    if (!token) return null;
+
     const response = await fetch('/api/users', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
       body: JSON.stringify({
-        firebase_uid: firebaseUser.uid,
-        email: firebaseUser.email,
         display_name: firebaseUser.displayName,
         photo_url: firebaseUser.photoURL,
-        is_verified: firebaseUser.emailVerified,
         auth_provider: authProvider,
       }),
     });
     
     if (!response.ok) {
-      const errorData = await response.json();
+      const errorData = await response.json().catch(() => ({}));
       console.error('Failed to sync user to Supabase:', errorData);
       return null;
     }
@@ -76,9 +88,16 @@ async function syncUserToSupabase(firebaseUser: User, authProvider: 'google' | '
 }
 
 // Helper function to fetch user data from Supabase
-async function fetchSupabaseUser(firebaseUid: string): Promise<SupabaseUser | null> {
+async function fetchSupabaseUser(firebaseUser: User): Promise<SupabaseUser | null> {
   try {
-    const response = await fetch(`/api/users?firebase_uid=${firebaseUid}`);
+    const token = await getBearerToken(firebaseUser);
+    if (!token) return null;
+
+    const response = await fetch('/api/users', {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    });
     if (!response.ok) {
       return null;
     }
@@ -148,7 +167,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setSupabaseUser(syncedUser);
           return;
         }
-        const fetchedUser = await fetchSupabaseUser(firebaseUser.uid);
+        const fetchedUser = await fetchSupabaseUser(firebaseUser);
         setSupabaseUser(fetchedUser);
       };
 
