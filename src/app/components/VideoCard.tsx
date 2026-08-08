@@ -239,7 +239,7 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                     </svg>
                   </div>
                   <span className="text-white font-medium text-sm text-left break-words">
-                    Telegram{video.telegram_links!.length > 1 ? ` ${index + 1}` : ''}
+                    Download via Telegram {video.telegram_links!.length > 1 ? ` ${index + 1}` : ''}
                   </span>
                 </div>
               </a>
@@ -265,7 +265,7 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                     <OneDriveIcon className="w-4 h-4" />
                   </div>
                   <span className="text-slate-800 sm:text-[#2C3E50] font-medium text-sm text-left break-words">
-                    OneDrive{video.onedrive_cloud_video_urls!.length > 1 ? ` ${index + 1}` : ''}
+                    Download via OneDrive{video.onedrive_cloud_video_urls!.length > 1 ? ` ${index + 1}` : ''}
                   </span>
                 </div>
               </a>
@@ -323,7 +323,7 @@ function VideoCardContent({ video, moduleId }: { video: Video; moduleId: string 
                     </svg>
                   </div>
                   <span className="text-slate-800 sm:text-[#2C3E50] font-medium text-sm text-left break-words">
-                    Materials{video.material_urls!.length > 1 ? ` ${index + 1}` : ''}
+                    PDF Download{video.material_urls!.length > 1 ? ` ${index + 1}` : ''}
                   </span>
                 </div>
               </a>
