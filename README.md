@@ -379,4 +379,27 @@ npm start
 
 ---
 
+## License
+
+KuppiHub is licensed under the
+GNU Affero General Public License v3.0 (AGPL-3.0).
+
+You are free to use, study, modify, improve, fork,
+and redistribute this software, including for
+commercial purposes, subject to the terms of the
+AGPL-3.0.
+
+Any modified or derivative version of KuppiHub
+must comply with the AGPL-3.0, including the
+requirement to make its corresponding source
+code available.
+
+If you deploy a modified version as a network
+service, you must provide its users with access
+to the corresponding source code.
+
+See the LICENSE file for the complete terms.
+
+---
+
 *Built with ❤️ for the student community*
